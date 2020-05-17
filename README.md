@@ -7,9 +7,9 @@ After years of composing music on my digital piano, and recording it only someti
 - listen.sh
 - Linux system with root access, may run with 200 MHz and 100 MB RAM, recommended 1 GHz and 500 MB RAM
 - USB Audio interface (for all features)
-- (http://sox.sourceforge.net/ "sox") (for WAV recording or streaming)
-- (https://lame.sourceforge.io/ "lame") (to convert WAV to MP3)
-- (http://www.sreal.com/~div/midi-utilities/ "abrainstorm") (to record MIDI)
-- (http://netcat.sourceforge.net/ "netcat") ("nc", to stream)
+- [sox](http://sox.sourceforge.net/) (for WAV recording or streaming)
+- [lame](https://lame.sourceforge.io/) (to convert WAV to MP3)
+- [abrainstorm](http://www.sreal.com/~div/midi-utilities/) (to record MIDI)
+- [netcat](http://netcat.sourceforge.net/) ("nc", to stream)
 
 On first run, _listen_ creates a buffer WAV file, a temporary file, and a log file.

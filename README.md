@@ -1,6 +1,10 @@
 # listen
 Automatically record instrument audio and MIDI
 
+![GitHub](https://img.shields.io/github/license/danieljweinberg/listen?color=3d9fbf&style=plastic)
+![GitHub last commit](https://img.shields.io/github/last-commit/danieljweinberg/listen?style=plastic)
+![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/danieljweinberg/listen?color=dea92c&style=plastic)
+
 After years of composing music on my digital piano, and recording it only sometimes, I realized that I make some of my best work when I don't even think to record. That's why I designed this program. It was written for a Raspberry Pi connected via USB Audio Interface to the instrument. Once started, _listen_ will run in the background, automatically saving both a MP3 and a MIDI for each stretch of time that the attached instrument is played. _listen_ can also send or receive an audio stream with another network-connected device.
 
 ## Required files & things

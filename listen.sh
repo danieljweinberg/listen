@@ -11,32 +11,31 @@
 # License:           GNU General Public License v3.0
 # ===================================================================
 
-__DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"	#/../../
-__FILE="${__DIR}/$(basename "${BASH_SOURCE[0]}")"	#/../../...sh
-__BASE="$(basename ${__FILE} .sh)"			#...
+__DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"	#/../../	, directory where the file is saved
+__FILE="${__DIR}/$(basename "${BASH_SOURCE[0]}")"	#/../../...sh	, full path and filename
+__BASE="$(basename ${__FILE} .sh)"			#...		, filename before extension, used for referring to the program in terminal messages
 # above thanks to https://kvz.io/bash-best-practices.html
 
-SAVE_DIR=/mnt/share/piano	# folder for completed recordings
-SAVE_low_disk_space="500"		# if free space is under this many MB, program won't record
-
-BUFFER_DIR=/mnt/share/piano	# temporary file while the instrument is being played
-BUFFER_low_disk_space="500"		# if free space is under this many MB, program won't record
-
-LOG_DIR=/mnt/share		# file for program events
-
-CONFIG_DIR=/mnt/share		# file with process group ID, necessary to kill processes
+# All directories below can be the same or different.
+SAVE_DIR=/save/audio-and-midi/here	# folder for completed recordings
+BUFFER_DIR=/audio/buffer/here		# temporary file while the instrument is being played
+LOG_DIR=/keep/log/here			# file for program events
+CONFIG_DIR=/keep/temp/file/here		# file with process group ID, necessary to kill processes
 
 BUFFER_FILE="$BUFFER_DIR/${__BASE}_buffer.wav"
 LOG_FILE="$LOG_DIR/$__BASE.log"			
-CONFIG_FILE="$CONFIG_DIR/$__BASE.config"
+CONFIG_FILE="$CONFIG_DIR/$__BASE.cfg"
+
+SAVE_low_disk_space="500"		# if free space is under this many MB, program won't record
+BUFFER_low_disk_space="500"		# if free space is under this many MB, program won't record
 
 ABRAINSTORM_PATH=/home/pi/midi-utilities/bin/abrainstorm	# path to binary
 
 CPU_SCALING_GOVERNOR_FILE="/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
 
-MIDI_PORT="20 0"		# MIDI port to use, with space instead of colon
+MIDI_PORT="20 0"			# MIDI port to use, with space instead of colon
 
-SEND_IP=192.168.1.59		# IP address of computer connected to instrument
+SEND_IP=10.0.0.2			# IP address of computer connected to instrument, needed in receiving computer
 
 WAIT_IN_SECONDS=30.0		# time to wait after end of playing to start 
 				# saving a WAV and MIDI, must specify tenths of
@@ -47,13 +46,13 @@ WAIT_IN_SECONDS=30.0		# time to wait after end of playing to start
 
 # README
 
-#Setting the default device
-#Find your desired card with:
+# Setting the default device
+# Find your desired card with:
 #   cat /proc/asound/cards
-#and then create /etc/asound.conf with following:
+# and then create /etc/asound.conf with following:
 #   defaults.pcm.card 1
 #   defaults.ctl.card 1
-#Replace "1" with number of your card determined above.
+# Replace "1" with number of your card determined above.
 
 # MIDI takes 1-3 seconds even when 30 minutes of playing
 # LAME takes about 0.5 of the time spent playing (e.g. 15 min to encode 30 min)
@@ -109,7 +108,7 @@ record_wav(){
     DATE=$(date +%Y-%m-%d--%H-%M-%S)
     TYPE="recording"
     ACTION="done"
-    [ -w "$LOG_DIR" ] && status | tee -a "$LOG_FILE"
+    [ -w "$LOG_DIR" ] && status | tee -a "$LOG_FILE"	# writes to log that a recording was done
     mv "$BUFFER_FILE" "$SAVE_DIR"/$DATE.recording.wav
     if exists lame; then
       encode_mp3 &
@@ -124,7 +123,7 @@ encode_mp3(){
   rm "$SAVE_DIR"/$DATE.recording.wav	# comment out to keep original WAV file
 }
 
-log(){
+log(){		# for debugging, watchdog function to record that program was running at a certain point in time
   while [ -w "$LOG_DIR" ]; do
     DATE=$(date +%Y-%m-%d--%H-%M-%S)
     TYPE=$(cfg_read TYPE)
@@ -182,7 +181,7 @@ record(){
   fi
 
   record_midi &			# wav then midi works best for $DATE congruence
-  [ -w "$LOG_FILE" ] && log &
+  # [ -w "$LOG_FILE" ] && log &	# for debugging, watchdog function to record that program was running at a certain point in time
 }
 
 # PROGRAM STARTS
@@ -192,8 +191,8 @@ if cfg_haskey TYPE; then TYPE=$(cfg_read TYPE); else TYPE="not running"; fi
 DATE=$(date +%Y-%m-%d--%H-%M-%S)
 status
 
-# BACKUP PROGRAM
-mkdir -p "$__DIR/${__BASE}_backups" && cp "$__FILE" "$__DIR/${__BASE}_backups/${__BASE}_${DATE}.sh.bak"
+# BACKUP PROGRAM, for debugging code modifications, saves a copy of program each time any action taken
+# mkdir -p "$__DIR/${__BASE}_backups" && cp "$__FILE" "$__DIR/${__BASE}_backups/${__BASE}_${DATE}.sh.bak"
 
 case "$1" in
   "record" | "send" | "receive" | "stop" | "status")

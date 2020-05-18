@@ -3,6 +3,14 @@
 #set -o errexit
 #set -o nounset
 
+# ===================================================================
+# Program Name:      listen
+# Purpose:           Automatically record instrument audio and MIDI 
+# Website:           https://github.com/danieljweinberg/listen
+# Author:            Daniel Weinberg, 2020
+# License:           GNU General Public License v3.0
+# ===================================================================
+
 __DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"	#/../../
 __FILE="${__DIR}/$(basename "${BASH_SOURCE[0]}")"	#/../../...sh
 __BASE="$(basename ${__FILE} .sh)"			#...

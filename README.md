@@ -6,9 +6,10 @@ After years of composing music on my digital piano, and recording it only someti
 ## Required files & things
 - listen.sh
 - Linux system with root access, may run with 200 MHz and 100 MB RAM, recommended 1 GHz and 500 MB RAM
-- External USB Audio interface or internal sound card (some variety of this is required for all features)
+- USB Audio interface or internal sound card
   - Audio input(s), e.g. 1/4 inch phone jack(s), required to record audio
   - MIDI in port(s) required to record MIDI
+  - I started with a [Roland Rubix22](https://www.roland.com/us/products/rubix22/).
 - [sox](http://sox.sourceforge.net/) (for WAV recording or streaming)
 - [lame](https://lame.sourceforge.io/) (to convert WAV to MP3)
 - [abrainstorm](http://www.sreal.com/~div/midi-utilities/) (to record MIDI)

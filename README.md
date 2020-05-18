@@ -6,7 +6,7 @@ Automatically record instrument audio and MIDI
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/danieljweinberg/listen?color=dea92c&style=plastic)
 ![GitHub top language](https://img.shields.io/github/languages/top/danieljweinberg/listen?color=3aa64c&style=plastic)
 
-After years of composing music on my digital piano, and recording it only sometimes, I realized that I make some of my best work when I don't even think to record. That's why I designed this program. Once started, _listen_ will run in the background, automatically saving both a MP3 and a MIDI for each stretch of time that the attached instrument is played. By default, it stops after 30 seconds of a silence. _listen_ can also send or receive an audio stream with another network-connected device.
+After years of composing music on my digital piano, and recording it only sometimes, I realized that I make some of my best work when I don't even think to record. That's why I designed this program. Once started, _listen_ will run in the background, automatically saving both a MP3 and a MIDI for each stretch of time that the attached instrument is played. By default, it stops after 30 seconds of silence. _listen_ can also send or receive an audio stream with another network-connected device.
 
 ## Requirements
 ### Hardware

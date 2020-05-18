@@ -6,11 +6,12 @@ Automatically record instrument audio and MIDI
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/danieljweinberg/listen?color=dea92c&style=plastic)
 ![GitHub top language](https://img.shields.io/github/languages/top/danieljweinberg/listen?color=3aa64c&style=plastic)
 
-After years of composing music on my digital piano, and recording it only sometimes, I realized that I make some of my best work when I don't even think to record. That's why I designed this program. It was written for a Raspberry Pi connected via USB Audio Interface to the instrument. Once started, _listen_ will run in the background, automatically saving both a MP3 and a MIDI for each stretch of time that the attached instrument is played. By default, it stops after 30 seconds of a silence. _listen_ can also send or receive an audio stream with another network-connected device.
+After years of composing music on my digital piano, and recording it only sometimes, I realized that I make some of my best work when I don't even think to record. That's why I designed this program. Once started, _listen_ will run in the background, automatically saving both a MP3 and a MIDI for each stretch of time that the attached instrument is played. By default, it stops after 30 seconds of a silence. _listen_ can also send or receive an audio stream with another network-connected device.
 
 ## Requirements
 ### Hardware
-- Linux system with root access, may run with 200 MHz and 100 MB RAM, recommended 1 GHz and 500 MB RAM
+- Linux system with root access, recommended 1 GHz and 500 MB RAM
+  - This program was written for a Raspberry Pi Zero with the above specs.
 - USB Audio interface or internal sound card
   - Audio input(s), e.g. 1/4 inch phone jack(s), required to record audio
   - MIDI in port(s) required to record MIDI
@@ -22,7 +23,7 @@ After years of composing music on my digital piano, and recording it only someti
 - [netcat](http://netcat.sourceforge.net/) ("nc", to stream)
 
 ## Setup
-Before first use: open the _listen.sh_ in a text editor and edit the file paths and other parameters to match your environment.
+Before first use: open _listen.sh_ in a text editor and edit the file paths and other parameters to match your environment.
 
 ### Configurable Parameters
 Path to directories for: saving audio, buffering audio, the log file, and the temporary configuration file. (On first run, _listen_ creates these latter three files.)

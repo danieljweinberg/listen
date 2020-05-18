@@ -60,14 +60,13 @@ Run _listen_ with sudo privileges.
 Note: _listen_ can record and send or record and receive at the same time, just run the command twice sequentially changing the option each time. Option **stop** will stop all actions at once.
   
 ### Second option (optional)
-  **live**		sox will run in foreground, not background, so you can see what it's doing as it records
-  			(usage: listen.sh record live)
+  **live**		sox will run in foreground, not background, so you can see what it's doing as it records and/or streams
         
   **debug**		terminal shows all commands, running _set -o xtrace_ first
   
 ### Debugging and Logging
 
-_listen_ has a few debug methods. In addition to the above secondary command which prints all commands to the terminal, there are two other features. Enable by uncommented the relevant lines in the script.
+_listen_ has a few debug methods. In addition to the above secondary command which prints all commands to the terminal, there are two other features. Enable by uncommenting the relevant lines in the script.
 1. Make a backup copy of the script each time the script is run with any option. This is useful if you change something in the script which alters the functionality, and you want to use an earlier version of the script. **In main program flow, default: off**
 2. Every 30 minutes, write a list of all of _listen_'s running processes to the log file. Useful to track if the program was recording when you wanted it to be. **In record function, default: off**
 

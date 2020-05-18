@@ -64,6 +64,11 @@ Note: _listen_ can record and send or record and receive at the same time, just 
         
   **debug**		terminal shows all commands, running _set -o xtrace_ first
   
+### Debugging and Logging
+
+_listen_ has a few debug methods. In addition to the above secondary command which prints all commands to the terminal, there are two other features.
+1. Make a backup copy of the script each time the script is run with any option. This is useful if you change something in the script which alters the functionality, and you want to use an earlier version of the script. **Default: off**
+2. Every 30 minutes, write a list of all of _listen_'s running processes to the log file. Useful to track if the program was recording when you wanted it to be. **Default: on**
 
 ## Notes on setting up devices
 MIDI recording will use the MIDI PORT parameter.

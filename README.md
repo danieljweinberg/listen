@@ -41,12 +41,19 @@ Run _listen_ with sudo privileges.
 
 ### Primary options (1 is required)
   **record**	begin recording WAV and MIDI in the background
+  
   **send**		start an audio stream
+  
   **receive**	receive an audio stream, from $SEND_IP if configured
+  
   **like**		put a timestamped zero-byte text file in the SAVE directory, a bookmark which can remind you to keep a recording
+  
   **devices**	list available audio and MIDI recording devices (see below for device configuration notes)
+  
   **recent**	show last 20 lines of the log file
+  
   **status**	show what _listen_ is currently doing (e.g. recording, streaming, receiving, not running)
+  
   **stop**		stop what _listen_ is currently doing
   
 Note: _listen_ can record and send or record and receive at the same time, just run the command twice sequentially changing the option each time. Option **stop** will stop all actions at once.
@@ -54,7 +61,9 @@ Note: _listen_ can record and send or record and receive at the same time, just 
 ### Second option (optional)
   **live**		sox will run in foreground, not background, so you can see what it's doing as it records
   			(usage: listen.sh record live)
+        
   **debug**		terminal shows all commands, running _set -o xtrace_ first
+  
 
 ## Notes on setting up devices
 MIDI recording will use the MIDI PORT parameter.

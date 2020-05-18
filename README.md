@@ -15,3 +15,7 @@ After years of composing music on my digital piano, and recording it only someti
 - [netcat](http://netcat.sourceforge.net/) ("nc", to stream)
 
 On first run, _listen_ creates a buffer WAV file, a temporary file, and a log file.
+
+[listen is licensed under the GNU General Public License v3.0](../LICENSE.txt)
+
+[Repository Code of Conduct](../CODE_OF_CONDUCT.md)

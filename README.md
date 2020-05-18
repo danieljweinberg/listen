@@ -35,7 +35,9 @@ MIDI port: identifier of your soundcard for MIDI recording purposes, run the pro
 Wait in seconds: stop recording after the instrument is silent for this long. The default is 30 seconds.
 
 ## Usage
-$	listen.sh \[primary_required_option\] \[secondary_optional_option\]
+```
+listen.sh [primary_required_option] [secondary_optional_option]
+```
 
 Run _listen_ with sudo privileges.
 
@@ -75,8 +77,10 @@ MIDI recording will use the MIDI PORT parameter.
 Audio recording will use the default device according to your system.
 Set the default audio device for recording by creating /etc/asound.conf with following two lines. Replace "1" with number of your card determined with **devices** option.
 
-- defaults.pcm.card 1
-- defaults.ctl.card 1
+```
+defaults.pcm.card 1
+defaults.ctl.card 1
+```
 
 [listen is licensed under the GNU General Public License v3.0](../LICENSE.txt)
 

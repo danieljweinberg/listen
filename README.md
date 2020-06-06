@@ -13,7 +13,7 @@ After years of composing music on my digital piano, and recording it only someti
 - Linux system with root access, recommended 1 GHz and 500 MB RAM
   - This program was written for a Raspberry Pi Zero with the above specs.
 - USB Audio interface or internal sound card
-  - Audio input(s), e.g. 1/4 inch phone jack(s), required to record audio
+  - Audio input(s), e.g. 3.5mm phone jack(s), required to record audio
   - MIDI in port(s) required to record MIDI
   - I started with a [Roland Rubix22](https://www.roland.com/us/products/rubix22/).
 ### Software  

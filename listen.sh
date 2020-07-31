@@ -9,7 +9,7 @@
 # Website:           https://github.com/danieljweinberg/listen
 # Author:            Daniel Weinberg, 2020
 # License:           GNU General Public License v3.0
-# /\/\/\/\
+# ./././.
 # ===================================================================
 
 __DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"	#/../../	, directory where the file is saved

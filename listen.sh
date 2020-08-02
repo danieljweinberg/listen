@@ -9,7 +9,7 @@
 # Website:           https://github.com/danieljweinberg/listen
 # Author:            Daniel Weinberg, 2020
 # License:           GNU General Public License v3.0
-# /\./././\
+# 
 # ===================================================================
 
 __DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"	#/../../	, directory where the file is saved
@@ -17,7 +17,9 @@ __FILE="${__DIR}/$(basename "${BASH_SOURCE[0]}")"	#/../../...sh	, full path and 
 __BASE="$(basename ${__FILE} .sh)"			#...		, filename before extension, used for referring to the program in terminal messages
 # above thanks to https://kvz.io/bash-best-practices.html
 
-POINTER_FILE="$__DIR/${__BASE}_config_location.cfg"	# invariable
+POINTER_FILE="$__DIR/${__BASE}_config_pointer.cfg"	# BASE is the name of the program, i.e. listen, unless you have changed it. This file specifies where the configuration file will live. It is same directory as where listen.sh is by default.
+
+# FUNCTIONS FOR SETTING AND RETRIEVING VARIABLES FROM CONFIGURATION FILE
 
 sed_escape() { # this and below from https://unix.stackexchange.com/a/433816
   sed -e 's/[]\/$*.^[]/\\&/g'1
@@ -44,49 +46,33 @@ cfg_haskey() { # key
   grep "^$(echo "$1" | sed_escape)=" "$CONFIG_FILE" > /dev/null 2>&1 || return 1
 }
 
+# USING POINTER FILE, RETRIEVE LOCATION OF CONFIG FILE
 
-#for get_dir in SAVE BUFFER LOG
-#  do
-#    "$get_dir"_DIR=$(cfg_read "$get_dir"_DIR)
-#  done 
 CONFIG_DIR=$(cfg_point CONFIG_DIR)
-CONFIG_FILE="$CONFIG_DIR/${__BASE}.cfg"
+CONFIG_FILE="$CONFIG_DIR/$__BASE.cfg"	
 
+# PULL LOCATIONS FROM CONFIG FILE
 
-SAVE_DIR=$(cfg_read SAVE_DIR)
-BUFFER_DIR=$(cfg_read BUFFER_DIR)
-LOG_DIR=$(cfg_read LOG_DIR)
-BACKUP_DIR=$(cfg_read BACKUP_DIR)
+for a in SAVE_DIR BUFFER_DIR LOG_DIR BACKUP_DIR
+  do
+    eval $a=$(cfg_read $a)
+  done 
 
-# All directories below can be the same or different.
+# In $CONFIG_FILE you can specify the respective locations for:
+# (SAVE) the folder for completed recordings
+# (BUFFER) temporary files while the instrument is being played
+# (LOG) log for program events
+# (BACKUP) optional backup of this script each time it's run, for debugging
+# The $CONFIG_FILE will also be populated with the process group ID, necessary to kill processes
 
+SAVE_low_disk_space=$(cfg_read SAVE_low_disk_space)		# if free space is under this many MB, program won't record
+BUFFER_low_disk_space=$(cfg_read BUFFER_low_disk_space)		# if free space is under this many MB, program won't record
 
-
-#SAVE_DIR=/save/audio-and-midi/here	# folder for completed recordings
-#BUFFER_DIR=/audio/buffer/here		# temporary file while the instrument is being played
-#LOG_DIR=/keep/log/here			# file for program events
-#CONFIG_DIR=/keep/temp/file/here		# file with process group ID, necessary to kill processes
-
-BUFFER_FILE="$BUFFER_DIR/${__BASE}_buffer.wav"
-LOG_FILE="$LOG_DIR/$__BASE.log"			
-
-SAVE_low_disk_space=$(cfg_read SAVE_low_disk_space)
-#SAVE_low_disk_space="500"		# if free space is under this many MB, program won't record
-BUFFER_low_disk_space=$(cfg_read BUFFER_low_disk_space)
-#BUFFER_low_disk_space="500"		# if free space is under this many MB, program won't record
-
-ABRAINSTORM_PATH=$(cfg_read ABRAINSTORM_PATH)
-#ABRAINSTORM_PATH=/home/pi/midi-utilities/bin/abrainstorm	# path to binary
+ABRAINSTORM_PATH=$(cfg_read ABRAINSTORM_PATH)			# path to binary
 CPU_SCALING_GOVERNOR_FILE=$(cfg_read CPU_SCALING_GOVERNOR_FILE)
-#CPU_SCALING_GOVERNOR_FILE="/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
-MIDI_PORT=$(cfg_read MIDI_PORT)
-#MIDI_PORT="20 0"			# MIDI port to use, with space instead of colon
-SEND_IP=$(cfg_read SEND_IP)
-#SEND_IP=10.0.0.2			# IP address of computer connected to instrument, needed in receiving computer
-WAIT_IN_SECONDS=$(cfg_read WAIT_IN_SECONDS)
-#WAIT_IN_SECONDS=30.0		# time to wait after end of playing to start 
-				# saving a WAV and MIDI, must specify tenths of
-				# seconds or sox treats as 0 seconds
+MIDI_PORT=$(cfg_read MIDI_PORT)					# MIDI port to use, with space instead of colon
+SEND_IP=$(cfg_read SEND_IP)					# IP address of computer connected to instrument, needed in receiving computer
+WAIT_IN_SECONDS=$(cfg_read WAIT_IN_SECONDS)			# time to wait after end of playing to start saving a WAV and MIDI, must specify tenths of seconds or sox treats as 0 seconds
 
 # exists function from https://stackoverflow.com/posts/34143401/revisions
 # sed below from https://stackoverflow.com/questions/2464760/modify-config-file-using-bash-script
@@ -103,6 +89,9 @@ WAIT_IN_SECONDS=$(cfg_read WAIT_IN_SECONDS)
 
 # MIDI takes 1-3 seconds even when 30 minutes of playing
 # LAME takes about 0.5 of the time spent playing (e.g. 15 min to encode 30 min)
+
+BUFFER_FILE="$BUFFER_DIR/${__BASE}_buffer.wav"
+LOG_FILE="$LOG_DIR/$__BASE.log"	
 
 exists(){ command -v "$1" >/dev/null 2>&1; }
 unwritable_directory(){ a="$1_DIR"; [[ ( ! -w ${!a} ) || ( ! -d ${!a} ) ]]; }
@@ -145,8 +134,8 @@ record_wav(){
 }
 
 encode_mp3(){
-  nice -10 lame --preset extreme "$SAVE_DIR"/$DATE.recording.wav "$SAVE_DIR"/$DATE.recording.mp3	# de-prioritizes lame encoding so that sox will have plenty of cycles to record again if needed during encoding
-  rm "$SAVE_DIR"/$DATE.recording.wav	# comment out to keep original WAV file
+  nice -10 lame --preset extreme "$BUFFER_DIR"/$DATE.recording.wav "$SAVE_DIR"/$DATE.recording.mp3	# de-prioritizes lame encoding so that sox will have plenty of cycles to record again if needed during encoding
+  rm "$BUFFER_DIR"/$DATE.recording.wav	# comment out to keep original WAV file
 }
 
 log(){		# for debugging, watchdog function to record that program was running at a certain point in time
@@ -220,6 +209,8 @@ status
 # BACKUP PROGRAM, for debugging code modifications, saves a copy of program each time any action taken
 # mkdir -p "$__DIR/${__BASE}_backups" && cp "$__FILE" "$__DIR/${__BASE}_backups/${__BASE}_${DATE}.sh.bak"
 
+# CHECK IF CONFIGURATION FILE IS WRITABLE
+
 case "$1" in
   "record" | "send" | "receive" | "stop" | "status")
     for check in unwritable_directory file_inaccessible
@@ -231,8 +222,10 @@ case "$1" in
   ;;
 esac
 
+# CAPTURE CURRENT CPU SCALING GOVERNOR VALUE
 CPU_SCALING_GOVERNOR_OLD=$(cfg_read CPU_SCALING_GOVERNOR_OLD)
 
+# DETERMINE WHETHER TO RUN SOX IN FOREGROUND (LIVE) OR BACKGROUND
 case "$2" in
   "live")
     live="true"
@@ -243,6 +236,7 @@ case "$2" in
   ;;
 esac
 
+# DETERMINE WHICH ACTIVITY TYPE TO PERFORM
 case "$1" in
   "stop")
     check_root
@@ -258,8 +252,12 @@ case "$1" in
     sh -c "echo -n $CPU_SCALING_GOVERNOR_OLD > $CPU_SCALING_GOVERNOR_FILE"
   ;;
   "like")
-    touch "$SAVE_DIR"/$DATE\.txt
-    TYPE="timestamp"
+    if unwritable_directory SAVE; then
+      error "${!a} : unwritable directory, no timestamp can be saved." 
+    else
+      touch "$SAVE_DIR"/$DATE\.txt
+      TYPE="timestamp"
+    fi
   ;;
   "record")
     check_root
@@ -326,7 +324,7 @@ case "$1" in
   ;;
 esac
 
-# LOG ACTION PERFORMED
+# NOTE WHICH ACTION WAS DONE TO THE ACTIVITY TYPE
 case "$1" in
   "record" | "send" | "receive")
     ACTION="started"
@@ -342,6 +340,7 @@ esac
 
 if [[ "$1" == "stop" ]]; then cfg_write TYPE "not running"; fi
 
+# LOG WHAT WAS DONE, IF LOG FILE IS ACCESSIBLE
 for check in unwritable_directory file_inaccessible
   do
     if $check LOG; then

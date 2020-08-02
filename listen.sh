@@ -100,6 +100,7 @@ WAIT_IN_SECONDS=$(cfg_read WAIT_IN_SECONDS)			# time to wait after end of playin
 WATCHDOG=$(cfg_read WATCHDOG)					# on or off: write to log the running processes every X time (interpreted by sleep command)
 WATCHDOG_INTERVAL=$(cfg_read WATCHDOG_INTERVAL)			# X for above. Default is 30m
 BACKUP_SCRIPT=$(cfg_read BACKUP_SCRIPT)				# on or off: make a backup of the script at runtime (for debugging)
+SAVE_FORMAT=$(cfg_read SAVE_FORMAT)				# if mp3, wavs will be saved in BUFFER_DIR and mp3s in SAVE_DIR. if wav, only the BUFFER_FILE will be saved in BUFFER_DIR -- the final wav will be saved in SAVE_DIR
 
 # MIDI takes 1-3 seconds even when 30 minutes of playing
 # LAME takes about 0.5 of the time spent playing (e.g. 15 min to encode 30 min)
@@ -116,13 +117,27 @@ squash(){ if cfg_haskey "$1"; then kill -15 -"$(cfg_read $1)"; fi; }	# sig9 leav
 check_root(){ if [[ $(/usr/bin/id -u -u) != "0" ]]; then error "This function requires that you run $__BASE as root user."; fi }
 
 warn() {
+#  TYPE_PRIOR="$TYPE"
+  ACTION_PRIOR="$ACTION"
+#  TYPE="$TYPE (attempted)"
+  ACTION="$ACTION_PRIOR (attempted) - WARNING"
+  status | tee -a "$LOG_FILE"
   echo 2>&1 "$*" | tee -a "$LOG_FILE"
+#  TYPE="$TYPE_PRIOR"
+  ACTION="$ACTION_PRIOR"
   return 1
 }
 
 error() {
-  echo >&2 "$*"
-  echo >&2 "$__BASE will exit."
+#  TYPE_PRIOR="$TYPE"
+  ACTION_PRIOR="$ACTION"
+#  TYPE="$TYPE (attempted)"
+  ACTION="$ACTION_PRIOR (attempted) - FATAL ERROR"
+  status | tee -a "$LOG_FILE"
+  echo 2>&1 "$*" | tee -a "$LOG_FILE"
+  echo 2>&1 "$__BASE will exit." | tee -a "$LOG_FILE"
+#  TYPE="$TYPE_PRIOR"
+  ACTION="$ACTION_PRIOR"
   exit 1
 }
 
@@ -133,11 +148,19 @@ record_wav(){
     TYPE="recording"
     ACTION="done"
     [ -w "$LOG_DIR" ] && status | tee -a "$LOG_FILE"	# writes to log that a recording was done
-    mv "$BUFFER_FILE" "$BUFFER_DIR"/$DATE.recording.wav
-    if exists lame; then
-      encode_mp3 &
+    
+    if [[ "$SAVE_FORMAT" == "mp3" ]]; then
+      if exists lame; then
+        mv "$BUFFER_FILE" "$BUFFER_DIR"/$DATE.recording.wav
+        encode_mp3 &
+      else
+        mv "$BUFFER_FILE" "$SAVE_DIR"/$DATE.recording.wav
+        warn "\"lame\" not installed so wav could not be encoded to mp3, so a wav file is in $SAVE_DIR"
+      fi
+    elif [[ "$SAVE_FORMAT" == "wav" ]]; then
+      mv "$BUFFER_FILE" "$SAVE_DIR"/$DATE.recording.wav
     else
-      warn "\"lame\" not installed so wav could not be encoded to mp3. wav file is still in $BUFFER_DIR"
+      error "invalid \$SAVE_FORMAT specified. Valid options are wav or mp3. Buffer can not be saved." 
     fi
   done
 }
@@ -189,6 +212,14 @@ record(){
       warn "${!a} : ${check//_/ }, no buffer audio can be saved. Only MIDI will be saved." 
     fi
   done
+
+  case "$SAVE_FORMAT" in
+    "wav" | "mp3")
+    ;;
+    *)
+    error "Invalid SAVE_FORMAT specified. Valid options are wav or mp3. Buffer can not be saved." 
+    ;;
+  esac
 
   if exists sox; then
     # on Raspberry Pi zero, disables CPU speed shifting which can cause audio crackle.

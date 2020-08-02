@@ -4,6 +4,7 @@
 #set -o nounset
 
 # ===================================================================
+#
 # Program Name:      listen
 # Purpose:           Automatically record instrument audio and MIDI 
 # Website:           https://github.com/danieljweinberg/listen
@@ -65,27 +66,15 @@ for a in SAVE_DIR BUFFER_DIR LOG_DIR BACKUP_DIR
 # (BACKUP) optional backup of this script each time it's run, for debugging
 # The $CONFIG_FILE will also be populated with the process group ID, necessary to kill processes
 
+# PULL SETTINGS FROM CONFIG FILE
+
 SAVE_low_disk_space=$(cfg_read SAVE_low_disk_space)		# if free space is under this many MB, program won't record
 BUFFER_low_disk_space=$(cfg_read BUFFER_low_disk_space)		# if free space is under this many MB, program won't record
-
 ABRAINSTORM_PATH=$(cfg_read ABRAINSTORM_PATH)			# path to binary
 CPU_SCALING_GOVERNOR_FILE=$(cfg_read CPU_SCALING_GOVERNOR_FILE)
 MIDI_PORT=$(cfg_read MIDI_PORT)					# MIDI port to use, with space instead of colon
 SEND_IP=$(cfg_read SEND_IP)					# IP address of computer connected to instrument, needed in receiving computer
 WAIT_IN_SECONDS=$(cfg_read WAIT_IN_SECONDS)			# time to wait after end of playing to start saving a WAV and MIDI, must specify tenths of seconds or sox treats as 0 seconds
-
-# exists function from https://stackoverflow.com/posts/34143401/revisions
-# sed below from https://stackoverflow.com/questions/2464760/modify-config-file-using-bash-script
-
-# README
-
-# Setting the default device
-# Find your desired card with:
-#   cat /proc/asound/cards
-# and then create /etc/asound.conf with following:
-#   defaults.pcm.card 1
-#   defaults.ctl.card 1
-# Replace "1" with number of your card determined above.
 
 # MIDI takes 1-3 seconds even when 30 minutes of playing
 # LAME takes about 0.5 of the time spent playing (e.g. 15 min to encode 30 min)
@@ -93,7 +82,7 @@ WAIT_IN_SECONDS=$(cfg_read WAIT_IN_SECONDS)			# time to wait after end of playin
 BUFFER_FILE="$BUFFER_DIR/${__BASE}_buffer.wav"
 LOG_FILE="$LOG_DIR/$__BASE.log"	
 
-exists(){ command -v "$1" >/dev/null 2>&1; }
+exists(){ command -v "$1" >/dev/null 2>&1; }	# from https://stackoverflow.com/posts/34143401/revisions
 unwritable_directory(){ a="$1_DIR"; [[ ( ! -w ${!a} ) || ( ! -d ${!a} ) ]]; }
 file_inaccessible(){ a="$1_FILE"; [[ "$(touch "${!a}" 2>&1)" != "" ]]; }
 low_disk_space(){ a="$1_DIR"; b="$1_low_disk_space"; [ $(df -m ${!a} | tail -1 | tr -s ' ' | cut -d' ' -f4) -lt ${!b} ]; }
@@ -207,6 +196,7 @@ DATE=$(date +%Y-%m-%d--%H-%M-%S)
 status
 
 # BACKUP PROGRAM, for debugging code modifications, saves a copy of program each time any action taken
+
 mkdir -p "$__DIR/${__BASE}_backups" && cp "$__FILE" "$__DIR/${__BASE}_backups/${__BASE}_${DATE}.sh.bak"
 
 # CHECK IF CONFIGURATION FILE IS WRITABLE
@@ -223,9 +213,11 @@ case "$1" in
 esac
 
 # CAPTURE CURRENT CPU SCALING GOVERNOR VALUE
+
 CPU_SCALING_GOVERNOR_OLD=$(cfg_read CPU_SCALING_GOVERNOR_OLD)
 
 # DETERMINE WHETHER TO RUN SOX IN FOREGROUND (LIVE) OR BACKGROUND
+
 case "$2" in
   "live")
     live="true"
@@ -237,6 +229,7 @@ case "$2" in
 esac
 
 # DETERMINE WHICH ACTIVITY TYPE TO PERFORM
+
 case "$1" in
   "stop")
     check_root
@@ -325,6 +318,7 @@ case "$1" in
 esac
 
 # NOTE WHICH ACTION WAS DONE TO THE ACTIVITY TYPE
+
 case "$1" in
   "record" | "send" | "receive")
     ACTION="started"
@@ -340,7 +334,8 @@ esac
 
 if [[ "$1" == "stop" ]]; then cfg_write TYPE "not running"; fi
 
-# LOG WHAT WAS DONE, IF LOG FILE IS ACCESSIBLE
+# PRINT TO TERMINAL AND LOG WHAT WAS DONE, IF LOG FILE IS ACCESSIBLE
+
 for check in unwritable_directory file_inaccessible
   do
     if $check LOG; then

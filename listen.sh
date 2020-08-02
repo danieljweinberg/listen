@@ -17,28 +17,74 @@ __FILE="${__DIR}/$(basename "${BASH_SOURCE[0]}")"	#/../../...sh	, full path and 
 __BASE="$(basename ${__FILE} .sh)"			#...		, filename before extension, used for referring to the program in terminal messages
 # above thanks to https://kvz.io/bash-best-practices.html
 
+POINTER_FILE="$__DIR/${__BASE}_config_location.cfg"	# invariable
+
+sed_escape() { # this and below from https://unix.stackexchange.com/a/433816
+  sed -e 's/[]\/$*.^[]/\\&/g'1
+}
+
+cfg_write() { # key, value
+  cfg_delete "$CONFIG_FILE" "$1"
+  echo "$1=$2" >> "$CONFIG_FILE"
+}
+
+cfg_read() { # key -> value
+  grep "^$(echo "$1" | sed_escape)=" "$CONFIG_FILE" | sed "s/^$(echo "$1" | sed_escape)=//" | tail -1
+}
+
+cfg_point() { # key -> value
+  grep "^$(echo "$1" | sed_escape)=" "$POINTER_FILE" | sed "s/^$(echo "$1" | sed_escape)=//" | tail -1
+}
+
+cfg_delete() { # (path), key
+  sed -i "/^$(echo "$2" | sed_escape).*$/d" "$CONFIG_FILE"
+}
+
+cfg_haskey() { # key
+  grep "^$(echo "$1" | sed_escape)=" "$CONFIG_FILE" > /dev/null 2>&1 || return 1
+}
+
+
+#for get_dir in SAVE BUFFER LOG
+#  do
+#    "$get_dir"_DIR=$(cfg_read "$get_dir"_DIR)
+#  done 
+CONFIG_DIR=$(cfg_point CONFIG_DIR)
+CONFIG_FILE="$CONFIG_DIR/${__BASE}.cfg"
+
+
+SAVE_DIR=$(cfg_read SAVE_DIR)
+BUFFER_DIR=$(cfg_read BUFFER_DIR)
+LOG_DIR=$(cfg_read LOG_DIR)
+BACKUP_DIR=$(cfg_read BACKUP_DIR)
+
 # All directories below can be the same or different.
-SAVE_DIR=/save/audio-and-midi/here	# folder for completed recordings
-BUFFER_DIR=/audio/buffer/here		# temporary file while the instrument is being played
-LOG_DIR=/keep/log/here			# file for program events
-CONFIG_DIR=/keep/temp/file/here		# file with process group ID, necessary to kill processes
+
+
+
+#SAVE_DIR=/save/audio-and-midi/here	# folder for completed recordings
+#BUFFER_DIR=/audio/buffer/here		# temporary file while the instrument is being played
+#LOG_DIR=/keep/log/here			# file for program events
+#CONFIG_DIR=/keep/temp/file/here		# file with process group ID, necessary to kill processes
 
 BUFFER_FILE="$BUFFER_DIR/${__BASE}_buffer.wav"
 LOG_FILE="$LOG_DIR/$__BASE.log"			
-CONFIG_FILE="$CONFIG_DIR/$__BASE.cfg"
 
-SAVE_low_disk_space="500"		# if free space is under this many MB, program won't record
-BUFFER_low_disk_space="500"		# if free space is under this many MB, program won't record
+SAVE_low_disk_space=$(cfg_read SAVE_low_disk_space)
+#SAVE_low_disk_space="500"		# if free space is under this many MB, program won't record
+BUFFER_low_disk_space=$(cfg_read BUFFER_low_disk_space)
+#BUFFER_low_disk_space="500"		# if free space is under this many MB, program won't record
 
-ABRAINSTORM_PATH=/home/pi/midi-utilities/bin/abrainstorm	# path to binary
-
-CPU_SCALING_GOVERNOR_FILE="/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
-
-MIDI_PORT="20 0"			# MIDI port to use, with space instead of colon
-
-SEND_IP=10.0.0.2			# IP address of computer connected to instrument, needed in receiving computer
-
-WAIT_IN_SECONDS=30.0		# time to wait after end of playing to start 
+ABRAINSTORM_PATH=$(cfg_read ABRAINSTORM_PATH)
+#ABRAINSTORM_PATH=/home/pi/midi-utilities/bin/abrainstorm	# path to binary
+CPU_SCALING_GOVERNOR_FILE=$(cfg_read CPU_SCALING_GOVERNOR_FILE)
+#CPU_SCALING_GOVERNOR_FILE="/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+MIDI_PORT=$(cfg_read MIDI_PORT)
+#MIDI_PORT="20 0"			# MIDI port to use, with space instead of colon
+SEND_IP=$(cfg_read SEND_IP)
+#SEND_IP=10.0.0.2			# IP address of computer connected to instrument, needed in receiving computer
+WAIT_IN_SECONDS=$(cfg_read WAIT_IN_SECONDS)
+#WAIT_IN_SECONDS=30.0		# time to wait after end of playing to start 
 				# saving a WAV and MIDI, must specify tenths of
 				# seconds or sox treats as 0 seconds
 
@@ -80,27 +126,6 @@ error() {
   echo >&2 "$*"
   echo >&2 "$__BASE will exit."
   exit 1
-}
-
-sed_escape() { # this and below from https://unix.stackexchange.com/a/433816
-  sed -e 's/[]\/$*.^[]/\\&/g'1
-}
-
-cfg_write() { # key, value
-  cfg_delete "$CONFIG_FILE" "$1"
-  echo "$1=$2" >> "$CONFIG_FILE"
-}
-
-cfg_read() { # key -> value
-  grep "^$(echo "$1" | sed_escape)=" "$CONFIG_FILE" | sed "s/^$(echo "$1" | sed_escape)=//" | tail -1
-}
-
-cfg_delete() { # (path), key
-  sed -i "/^$(echo "$2" | sed_escape).*$/d" "$CONFIG_FILE"
-}
-
-cfg_haskey() { # key
-  grep "^$(echo "$1" | sed_escape)=" "$CONFIG_FILE" > /dev/null 2>&1 || return 1
 }
 
 record_wav(){

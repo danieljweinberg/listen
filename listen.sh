@@ -101,6 +101,7 @@ WATCHDOG=$(cfg_read WATCHDOG)					# on or off: write to log the running processe
 WATCHDOG_INTERVAL=$(cfg_read WATCHDOG_INTERVAL)			# X for above. Default is 30m
 BACKUP_SCRIPT=$(cfg_read BACKUP_SCRIPT)				# on or off: make a backup of the script at runtime (for debugging)
 SAVE_FORMAT=$(cfg_read SAVE_FORMAT)				# if mp3, wavs will be saved in BUFFER_DIR and mp3s in SAVE_DIR. if wav, only the BUFFER_FILE will be saved in BUFFER_DIR -- the final wav will be saved in SAVE_DIR
+LOGGING=$(cfg_read LOGGING)
 
 # MIDI takes 1-3 seconds even when 30 minutes of playing
 # LAME takes about 0.5 of the time spent playing (e.g. 15 min to encode 30 min)
@@ -117,38 +118,45 @@ squash(){ if cfg_haskey "$1"; then kill -15 -"$(cfg_read $1)"; fi; }	# sig9 leav
 check_root(){ if [[ $(/usr/bin/id -u -u) != "0" ]]; then error "This function requires that you run $__BASE as root user."; fi }
 
 warn() {
-#  TYPE_PRIOR="$TYPE"
   ACTION_PRIOR="$ACTION"
-#  TYPE="$TYPE (attempted)"
   ACTION="$ACTION_PRIOR (attempted) - WARNING"
-  status | tee -a "$LOG_FILE"
-  echo 2>&1 "$*" | tee -a "$LOG_FILE"
-#  TYPE="$TYPE_PRIOR"
+  if [[ "$LOGGING" == "on" ]]; then
+    status | tee -a "$LOG_FILE"
+    echo 2>&1 "$*" | tee -a "$LOG_FILE"
+  elif [[ "$LOGGING" == "off" ]]; then
+    status
+    echo 2>&1 "$*"
+  fi
   ACTION="$ACTION_PRIOR"
   return 1
 }
 
 error() {
-#  TYPE_PRIOR="$TYPE"
   ACTION_PRIOR="$ACTION"
-#  TYPE="$TYPE (attempted)"
   ACTION="$ACTION_PRIOR (attempted) - FATAL ERROR"
-  status | tee -a "$LOG_FILE"
-  echo 2>&1 "$*" | tee -a "$LOG_FILE"
-  echo 2>&1 "$__BASE will exit." | tee -a "$LOG_FILE"
-#  TYPE="$TYPE_PRIOR"
+  if [[ "$LOGGING" == "on" ]]; then
+    status | tee -a "$LOG_FILE"
+    echo 2>&1 "$*" | tee -a "$LOG_FILE"
+    echo 2>&1 "$__BASE will exit." | tee -a "$LOG_FILE"
+  elif [[ "$LOGGING" == "off" ]]; then
+    status
+    echo 2>&1 "$*"
+    echo 2>&1 "$__BASE will exit."
+  fi
   ACTION="$ACTION_PRIOR"
   exit 1
 }
 
 record_wav(){
   while true; do
-    sox -t alsa -d -c 2 -r 48000 -b 24 "$BUFFER_FILE" silence 1 0 -70d 1 $WAIT_IN_SECONDS -70d
+echo "LOGGING is: $LOGGING"    
+sox -t alsa -d -c 2 -r 48000 -b 24 "$BUFFER_FILE" silence 1 0 -70d 1 $WAIT_IN_SECONDS -70d
     DATE=$(date +%Y-%m-%d--%H-%M-%S)
     TYPE="recording"
     ACTION="done"
-    [ -w "$LOG_DIR" ] && status | tee -a "$LOG_FILE"	# writes to log that a recording was done
-    
+    if [[ "$LOGGING" == "on" ]]; then
+      [ -w "$LOG_DIR" ] && status | tee -a "$LOG_FILE"	# writes to log that a recording was done
+    fi
     if [[ "$SAVE_FORMAT" == "mp3" ]]; then
       if exists lame; then
         mv "$BUFFER_FILE" "$BUFFER_DIR"/$DATE.recording.wav
@@ -407,10 +415,18 @@ for check in unwritable_directory file_inaccessible
   do
     if $check LOG; then
       echo >&2 "${!a} : ${check//_/ }, $__BASE will continue as normal but no events will be logged."
-      status; exit 0
+      LOGGING=off
+      #cfg_write LOGGING "$LOGGING"
     fi
   done
 
-status | tee -a "$LOG_FILE"
+if [[ "$LOGGING" == "on" ]]; then
+  status | tee -a "$LOG_FILE"
+elif [[ "$LOGGING" == "off" ]]; then
+  status
+else
+  echo >&2 "Invalid LOGGING option. Valid options are on or off. $__BASE will exit."
+  exit 1
+fi
 
 exit 0

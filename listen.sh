@@ -3,7 +3,7 @@
 #set -o errexit
 #set -o nounset
 
-# ===================================================================
+# ==============================================================================
 #
 # Program Name:      listen
 # Purpose:           Automatically record instrument audio and MIDI 
@@ -11,14 +11,13 @@
 # Author:            Daniel Weinberg, 2020
 # License:           GNU General Public License v3.0
 # 
-# ===================================================================
+# ==============================================================================
 
 __DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"	#/../../	, directory where the file is saved
 __FILE="${__DIR}/$(basename "${BASH_SOURCE[0]}")"	#/../../...sh	, full path and filename
 __BASE="$(basename ${__FILE} .sh)"			#...		, filename before extension, used for referring to the program in terminal messages
 # above thanks to https://kvz.io/bash-best-practices.html
-
-POINTER_FILE="$__DIR/${__BASE}_config_pointer.cfg"	# BASE is the name of the program, i.e. listen, unless you have changed it. This file specifies where the configuration file will live. It is same directory as where listen.sh is by default.
+# BASE is the name of the program, i.e. listen, unless you have changed it. 
 
 # FUNCTIONS FOR SETTING AND RETRIEVING VARIABLES FROM CONFIGURATION FILE
 
@@ -47,24 +46,47 @@ cfg_haskey() { # key
   grep "^$(echo "$1" | sed_escape)=" "$CONFIG_FILE" > /dev/null 2>&1 || return 1
 }
 
-# USING POINTER FILE, RETRIEVE LOCATION OF CONFIG FILE
+exists(){ command -v "$1" >/dev/null 2>&1; }	# from https://stackoverflow.com/posts/34143401/revisions
 
-CONFIG_DIR=$(cfg_point CONFIG_DIR)
+# SET LOCATION OF CONFIG FILE, USING POINTER FILE IF APPLICABLE
+
+# ------------------------------------------------------------------------------
+#
+# listen relies on a CONFIG_FILE in the same directory as listen. If you need
+#   CONFIG_FILE to live elsewhere (e.g. due to file permissions or to support
+#   multiple users or implementations), then a POINTER_FILE in the same
+#   directory as listen will tell listen where to find the CONFIG_FILE. 
+#
+# ------------------------------------------------------------------------------
+
+POINTER_FILE="$__DIR/${__BASE}_config_pointer.cfg"
+
+if exists "$POINTER_FILE"; then
+  CONFIG_DIR=$(cfg_point CONFIG_DIR)
+else
+  CONFIG_DIR="$__DIR"
+fi
+
 CONFIG_FILE="$CONFIG_DIR/$__BASE.cfg"	
 
 # PULL LOCATIONS FROM CONFIG FILE
 
 for a in SAVE_DIR BUFFER_DIR LOG_DIR BACKUP_DIR
-  do
-    eval $a=$(cfg_read $a)
-  done 
+  do eval $a=$(cfg_read $a); done 
 
+# ------------------------------------------------------------------------------
+#
 # In $CONFIG_FILE you can specify the respective locations for:
+# 
 # (SAVE) the folder for completed recordings
 # (BUFFER) temporary files while the instrument is being played
 # (LOG) log for program events
 # (BACKUP) optional backup of this script each time it's run, for debugging
-# The $CONFIG_FILE will also be populated with the process group ID, necessary to kill processes
+#
+# The $CONFIG_FILE will also be populated with the process group ID, necessary
+#   to kill processes
+#
+# ------------------------------------------------------------------------------
 
 # PULL SETTINGS FROM CONFIG FILE
 
@@ -75,6 +97,9 @@ CPU_SCALING_GOVERNOR_FILE=$(cfg_read CPU_SCALING_GOVERNOR_FILE)
 MIDI_PORT=$(cfg_read MIDI_PORT)					# MIDI port to use, with space instead of colon
 SEND_IP=$(cfg_read SEND_IP)					# IP address of computer connected to instrument, needed in receiving computer
 WAIT_IN_SECONDS=$(cfg_read WAIT_IN_SECONDS)			# time to wait after end of playing to start saving a WAV and MIDI, must specify tenths of seconds or sox treats as 0 seconds
+WATCHDOG=$(cfg_read WATCHDOG)					# on or off: write to log the running processes every X time (interpreted by sleep command)
+WATCHDOG_INTERVAL=$(cfg_read WATCHDOG_INTERVAL)			# X for above. Default is 30m
+BACKUP_SCRIPT=$(cfg_read BACKUP_SCRIPT)				# on or off: make a backup of the script at runtime (for debugging)
 
 # MIDI takes 1-3 seconds even when 30 minutes of playing
 # LAME takes about 0.5 of the time spent playing (e.g. 15 min to encode 30 min)
@@ -82,18 +107,13 @@ WAIT_IN_SECONDS=$(cfg_read WAIT_IN_SECONDS)			# time to wait after end of playin
 BUFFER_FILE="$BUFFER_DIR/${__BASE}_buffer.wav"
 LOG_FILE="$LOG_DIR/$__BASE.log"	
 
-exists(){ command -v "$1" >/dev/null 2>&1; }	# from https://stackoverflow.com/posts/34143401/revisions
 unwritable_directory(){ a="$1_DIR"; [[ ( ! -w ${!a} ) || ( ! -d ${!a} ) ]]; }
 file_inaccessible(){ a="$1_FILE"; [[ "$(touch "${!a}" 2>&1)" != "" ]]; }
 low_disk_space(){ a="$1_DIR"; b="$1_low_disk_space"; [ $(df -m ${!a} | tail -1 | tr -s ' ' | cut -d' ' -f4) -lt ${!b} ]; }
 status(){ echo -e "$DATE\t$TYPE $ACTION"; }
 pgid(){ ps -o pgid= $1 | grep -o '[0-9]*' ; }
-squash(){ if cfg_haskey "$1"; then kill -15 -"$(cfg_read $1)"; fi; }
-check_root(){
-  if [[ $(/usr/bin/id -u -u) != "0" ]]; then
-    error "This function requires that you run $__BASE as root user."
-  fi
-}
+squash(){ if cfg_haskey "$1"; then kill -15 -"$(cfg_read $1)"; fi; }	# sig9 leaves buffer.wav at 0 bytes, sig15 leaves buffer.wav at 80 bytes
+check_root(){ if [[ $(/usr/bin/id -u -u) != "0" ]]; then error "This function requires that you run $__BASE as root user."; fi }
 
 warn() {
   echo 2>&1 "$*" | tee -a "$LOG_FILE"
@@ -134,7 +154,7 @@ log(){		# for debugging, watchdog function to record that program was running at
     ACTION=""
     status >> "$LOG_FILE"
     echo -e "\nRunning Processes:\n$(ps | grep sox)\n$(sudo ps | grep abrainstorm)\n$(ps | grep lame)" >> "$LOG_FILE"
-    sleep 30m
+    sleep "$WATCHDOG_INTERVAL"
   done
 }
 
@@ -185,7 +205,9 @@ record(){
   fi
 
   record_midi &			# wav then midi works best for $DATE congruence
-  # [ -w "$LOG_FILE" ] && log &	# for debugging, watchdog function to record that program was running at a certain point in time
+  if [[ $WATCHDOG == "on" ]]; then
+    [ -w "$LOG_FILE" ] && log &	# for debugging, watchdog function to record that program was running at a certain point in time
+  fi
 }
 
 # PROGRAM STARTS
@@ -197,7 +219,14 @@ status
 
 # BACKUP PROGRAM, for debugging code modifications, saves a copy of program each time any action taken
 
-mkdir -p "$__DIR/${__BASE}_backups" && cp "$__FILE" "$__DIR/${__BASE}_backups/${__BASE}_${DATE}.sh.bak"
+if [[ $BACKUP_SCRIPT == "on" ]]; then
+  if ! unwritable_directory BACKUP; then
+    mkdir -p "$BACKUP_DIR" && cp "$__FILE" "$BACKUP_DIR/${__BASE}_${DATE}.sh.bak"
+    echo "$__BASE backup saved"
+  else
+    warn "${!a} unwritable : $__BASE backup could not be saved."
+  fi  
+fi
 
 # CHECK IF CONFIGURATION FILE IS WRITABLE
 
@@ -243,6 +272,13 @@ case "$1" in
     if [[ $running_tasks = 0 ]]; then error "$__BASE was not running anyway, so there was nothing to terminate."; fi
     # return CPU scaling governor to what it was before running program
     sh -c "echo -n $CPU_SCALING_GOVERNOR_OLD > $CPU_SCALING_GOVERNOR_FILE"
+
+    if [ $(ls "$BUFFER_FILE" -l | tr -s ' ' | cut -d' ' -f5) -gt 1024 ]; then	# if more than 1 KB in buffer, make copy before closing
+#   if [ -s "$BUFFER_FILE" ]; then 
+      mv "$BUFFER_FILE" "$BUFFER_DIR"/$DATE.recording.wav      
+      warn "Buffer was not empty on stopping, saved to $BUFFER_DIR/$DATE.recording.wav"
+    fi
+    rm "$BUFFER_FILE" 2>/dev/null		#; touch "$BUFFER_FILE"
   ;;
   "like")
     if unwritable_directory SAVE; then

@@ -96,7 +96,7 @@ check_root(){
 }
 
 warn() {
-  echo >&2 "$*"
+  echo 2>&1 "$*" | tee -a "$LOG_FILE"
   return 1
 }
 
@@ -113,18 +113,18 @@ record_wav(){
     TYPE="recording"
     ACTION="done"
     [ -w "$LOG_DIR" ] && status | tee -a "$LOG_FILE"	# writes to log that a recording was done
-    mv "$BUFFER_FILE" "$SAVE_DIR"/$DATE.recording.wav
+    mv "$BUFFER_FILE" "$BUFFER_DIR"/$DATE.recording.wav
     if exists lame; then
       encode_mp3 &
     else
-      warn "\"lame\" not installed so wav could not be encoded to mp3."
+      warn "\"lame\" not installed so wav could not be encoded to mp3. wav file is still in $BUFFER_DIR"
     fi
   done
 }
 
 encode_mp3(){
   nice -10 lame --preset extreme "$BUFFER_DIR"/$DATE.recording.wav "$SAVE_DIR"/$DATE.recording.mp3	# de-prioritizes lame encoding so that sox will have plenty of cycles to record again if needed during encoding
-  rm "$BUFFER_DIR"/$DATE.recording.wav	# comment out to keep original WAV file
+  rm "$BUFFER_DIR"/$DATE.recording.wav
 }
 
 log(){		# for debugging, watchdog function to record that program was running at a certain point in time
@@ -339,7 +339,7 @@ if [[ "$1" == "stop" ]]; then cfg_write TYPE "not running"; fi
 for check in unwritable_directory file_inaccessible
   do
     if $check LOG; then
-      warn "${!a} : ${check//_/ }, $__BASE will continue as normal but no events will be logged."
+      echo >&2 "${!a} : ${check//_/ }, $__BASE will continue as normal but no events will be logged."
       status; exit 0
     fi
   done

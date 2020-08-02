@@ -207,7 +207,7 @@ DATE=$(date +%Y-%m-%d--%H-%M-%S)
 status
 
 # BACKUP PROGRAM, for debugging code modifications, saves a copy of program each time any action taken
-# mkdir -p "$__DIR/${__BASE}_backups" && cp "$__FILE" "$__DIR/${__BASE}_backups/${__BASE}_${DATE}.sh.bak"
+mkdir -p "$__DIR/${__BASE}_backups" && cp "$__FILE" "$__DIR/${__BASE}_backups/${__BASE}_${DATE}.sh.bak"
 
 # CHECK IF CONFIGURATION FILE IS WRITABLE
 

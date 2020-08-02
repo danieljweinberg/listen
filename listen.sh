@@ -88,7 +88,7 @@ file_inaccessible(){ a="$1_FILE"; [[ "$(touch "${!a}" 2>&1)" != "" ]]; }
 low_disk_space(){ a="$1_DIR"; b="$1_low_disk_space"; [ $(df -m ${!a} | tail -1 | tr -s ' ' | cut -d' ' -f4) -lt ${!b} ]; }
 status(){ echo -e "$DATE\t$TYPE $ACTION"; }
 pgid(){ ps -o pgid= $1 | grep -o '[0-9]*' ; }
-squash(){ if cfg_haskey "$1"; then kill -9 -"$(cfg_read $1)"; fi; }
+squash(){ if cfg_haskey "$1"; then kill -15 -"$(cfg_read $1)"; fi; }
 check_root(){
   if [[ $(/usr/bin/id -u -u) != "0" ]]; then
     error "This function requires that you run $__BASE as root user."
@@ -221,7 +221,7 @@ CPU_SCALING_GOVERNOR_OLD=$(cfg_read CPU_SCALING_GOVERNOR_OLD)
 case "$2" in
   "live")
     live="true"
-    how_to_stop="Ctrl+C to end recording and immediately start another one. Ctrl+C twice quickly to stop program and return to shell prompt."
+    how_to_stop="To end this program, run \"sudo $__FILE stop\" in the same window or another terminal."
   ;;
   *)
     how_to_stop="To end this program, run \"sudo $__FILE stop\""

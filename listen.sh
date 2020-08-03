@@ -102,6 +102,9 @@ WATCHDOG_INTERVAL=$(cfg_read WATCHDOG_INTERVAL)			# X for above. Default is 30m
 BACKUP_SCRIPT=$(cfg_read BACKUP_SCRIPT)				# on or off: make a backup of the script at runtime (for debugging)
 SAVE_FORMAT=$(cfg_read SAVE_FORMAT)				# if mp3, wavs will be saved in BUFFER_DIR and mp3s in SAVE_DIR. if wav, only the BUFFER_FILE will be saved in BUFFER_DIR -- the final wav will be saved in SAVE_DIR
 LOGGING=$(cfg_read LOGGING)
+CAMUSER=$(cfg_read CAMUSER)
+CAMPWD=$(cfg_read CAMPWD)
+CAMIP=$(cfg_read CAMIP)
 
 # MIDI takes 1-3 seconds even when 30 minutes of playing
 # LAME takes about 0.5 of the time spent playing (e.g. 15 min to encode 30 min)
@@ -149,8 +152,7 @@ error() {
 
 record_wav(){
   while true; do
-echo "LOGGING is: $LOGGING"    
-sox -t alsa -d -c 2 -r 48000 -b 24 "$BUFFER_FILE" silence 1 0 -70d 1 $WAIT_IN_SECONDS -70d
+    sox -t alsa -d -c 2 -r 48000 -b 24 "$BUFFER_FILE" silence 1 0 -70d 1 $WAIT_IN_SECONDS -70d
     DATE=$(date +%Y-%m-%d--%H-%M-%S)
     TYPE="recording"
     ACTION="done"
@@ -249,6 +251,45 @@ record(){
   fi
 }
 
+video(){
+  # IF LISTEN BUFFER HAS DATA, PIANO IS BEING PLAYED, SO START RECORDING VIDEO
+  cfg_write PGID_VIDEO $(pgid $!)
+  while true; do
+  VIDEO_BUFFER_FILE="/home/pi/buffer.mp4"
+    if [ $(ls "$BUFFER_FILE" -l | tr -s ' ' | cut -d' ' -f5) -gt 0 ]; then
+      # LISTEN BUFFER IS NOT EMPTY, SO START VLC   
+      rtsp &> /dev/null &
+      until [ $(ls "$BUFFER_FILE" -l | tr -s ' ' | cut -d' ' -f5) -eq 0 ]
+      # WAIT UNTIL LISTEN BUFFER IS EMPTY AGAIN, BEFORE EVALUATING
+      do
+        # LISTEN BUFFER IS STILL NOT EMPTY, DON'T START VLC AGAIN WHICH WOULD OVERWRITE BUFFER VIDEO FILE
+        sleep 1
+      done
+    else
+      ps cax | grep vlc > /dev/null	# source: https://stackoverflow.com/a/9118509
+      if [ $? -eq 0 ]; then
+	# LISTEN BUFFER IS EMPTY, BUT VLC IS STILL RUNNING, SO KILL VLC
+        DATE=$(date +%Y-%m-%d--%H-%M-%S)
+        killall -2 vlc
+        A=0
+        until [ $A -eq 1 ]
+        do
+          ps cax | grep vlc > /dev/null
+          A=$?
+          sleep 0.1
+        done
+        mv "$VIDEO_BUFFER_FILE" "$SAVE_DIR/$DATE.mp4"
+      fi
+      # KEEP LISTENING
+      sleep 1
+    fi
+  done 
+}
+
+rtsp(){
+  vlc -I dummy rtsp://"$CAMUSER":"$CAMPWD"@"$CAMIP":8554/live --sout "#duplicate{dst=std{access=file,mux=mp4,dst='$VIDEO_BUFFER_FILE'},dst=nodisplay}"
+}
+
 # PROGRAM STARTS
 
 if [[ "$2" == "debug" ]]; then set -o xtrace; fi
@@ -302,7 +343,7 @@ case "$1" in
   "stop")
     check_root
     running_tasks=0
-    for PGID in PGID_RECORD PGID_STREAM_SEND PGID_STREAM_RECEIVE
+    for PGID in PGID_RECORD PGID_STREAM_SEND PGID_STREAM_RECEIVE PGID_VIDEO
       do
         if cfg_haskey $PGID; then (( running_tasks+=1 )); else continue; fi
         squash $PGID
@@ -317,7 +358,7 @@ case "$1" in
       mv "$BUFFER_FILE" "$BUFFER_DIR"/$DATE.recording.wav      
       warn "Buffer was not empty on stopping, saved to $BUFFER_DIR/$DATE.recording.wav"
     fi
-    rm "$BUFFER_FILE" 2>/dev/null		#; touch "$BUFFER_FILE"
+    rm "$BUFFER_FILE" 2>/dev/null; touch "$BUFFER_FILE"
   ;;
   "like")
     if unwritable_directory SAVE; then
@@ -327,11 +368,27 @@ case "$1" in
       TYPE="timestamp"
     fi
   ;;
+  "video")
+    if [[ $(/usr/bin/id -u -u) == "0" ]]; then error "This function requires that you NOT run $__BASE as root user."; fi
+
+    if ! exists vlc; then
+      error "vlc not present."
+    elif [[ "$TYPE" == "recording" ]] ; then
+      TYPE="$TYPE & video"
+    elif [[ "$TYPE" == "not running" ]] ; then
+      TYPE="video"
+    else
+      error "$__BASE is already $TYPE."
+    fi
+    video &
+  ;;
   "record")
     check_root
     if [[ "$TYPE" == "not running" ]]; then
       TYPE="recording"
     elif [[ "$TYPE" == "streaming (sending)" ]]; then
+      TYPE="recording & $TYPE"
+    elif [[ "$TYPE" == "video" ]]; then
       TYPE="recording & $TYPE"
     else
       error "$__BASE is already $TYPE."
@@ -388,14 +445,14 @@ case "$1" in
     exit 0
   ;;
   *)
-    error "Invalid option. Valid options for $__BASE: record | send | receive | like | devices | recent | status | stop"
+    error "Invalid option. Valid options for $__BASE: record | send | receive | video | like | devices | recent | status | stop"
   ;;
 esac
 
 # NOTE WHICH ACTION WAS DONE TO THE ACTIVITY TYPE
 
 case "$1" in
-  "record" | "send" | "receive")
+  "record" | "send" | "receive" | "video")
     ACTION="started"
     cfg_write TYPE "$TYPE"
   ;;

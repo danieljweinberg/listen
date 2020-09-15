@@ -110,6 +110,8 @@ CAMIP=$(cfg_read CAMIP)
 # LAME takes about 0.5 of the time spent playing (e.g. 15 min to encode 30 min)
 
 BUFFER_FILE="$BUFFER_DIR/${__BASE}_buffer.wav"
+VIDEO_BUFFER_FILE="$BUFFER_DIR/${__BASE}_buffer.mp4"
+
 LOG_FILE="$LOG_DIR/$__BASE.log"	
 
 unwritable_directory(){ a="$1_DIR"; [[ ( ! -w ${!a} ) || ( ! -d ${!a} ) ]]; }
@@ -172,6 +174,14 @@ record_wav(){
     else
       error "invalid \$SAVE_FORMAT specified. Valid options are wav or mp3. Buffer can not be saved." 
     fi
+  # LISTEN BUFFER IS EMPTY, BUT VLC IS STILL RUNNING, SO KILL VLC
+  # kill vlc and video, move buffer, call video
+    # if cfg_haskey PGID_VIDEO; then
+    ##   killall -2 vlc
+    #    kill -2 -"$(cfg_read $PGID_VIDEO)"	# use this one
+    #   cfg_delete "$CONFIG_FILE" $PGID	# kill video PGID and restart video function
+    # can run video only with record, can not run video on its own. Would have to introduce delete buffer after end option.
+    # DATE=$(date +%Y-%m-%d--%H-%M-%S)
   done
 }
 
@@ -241,6 +251,7 @@ record(){
       record_wav >/dev/null 2>&1 &
     fi
     echo "$how_to_stop"
+   
   else
     warn "Sox not found. Audio will not be recorded."
   fi
@@ -255,19 +266,20 @@ video(){
   # IF LISTEN BUFFER HAS DATA, PIANO IS BEING PLAYED, SO START RECORDING VIDEO
   cfg_write PGID_VIDEO $(pgid $!)
   while true; do
-  VIDEO_BUFFER_FILE="/home/pi/buffer.mp4"
-    if [ $(ls "$BUFFER_FILE" -l | tr -s ' ' | cut -d' ' -f5) -gt 0 ]; then
-      # LISTEN BUFFER IS NOT EMPTY, SO START VLC   
+    if [ -s "$BUFFER_FILE" ]; then	# if filesize > 0
+      # LISTEN BUFFER IS NOT EMPTY, SO START VLC 
+      # cfg_write VIDEO_RECORDING_ACTIVE yes  
       rtsp &> /dev/null &
-      until [ $(ls "$BUFFER_FILE" -l | tr -s ' ' | cut -d' ' -f5) -eq 0 ]
+      until [ ! -s "$BUFFER_FILE" ]	# until NOT filesize > 0
       # WAIT UNTIL LISTEN BUFFER IS EMPTY AGAIN, BEFORE EVALUATING
       do
         # LISTEN BUFFER IS STILL NOT EMPTY, DON'T START VLC AGAIN WHICH WOULD OVERWRITE BUFFER VIDEO FILE
         sleep 1
       done
     else
-      ps cax | grep vlc > /dev/null	# source: https://stackoverflow.com/a/9118509
-      if [ $? -eq 0 ]; then
+      ps cax | grep vlc > /dev/null	# is vlc running?, source: https://stackoverflow.com/a/9118509
+    # replace with configuration value to monitor if video actively recording (cfg_read)
+      if [ $? -eq 0 ]; then		# if ps successfully shows a running vlc
 	# LISTEN BUFFER IS EMPTY, BUT VLC IS STILL RUNNING, SO KILL VLC
         DATE=$(date +%Y-%m-%d--%H-%M-%S)
         killall -2 vlc

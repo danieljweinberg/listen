@@ -81,7 +81,7 @@ Set the default audio device for recording by creating /etc/asound.conf with fol
 defaults.pcm.card 1
 defaults.ctl.card 1
 ```
-The number of your audio device may change if it is disconnected and reconnected while the computer is on. The effect of this can be shown as 'listen.sh record live' showing sox errors in opening a pcm device. Be sure to use 'listen.sh devices' to check the current numbers for your device and edit listen.cfg accordingly.
+The number of your audio device may change if it is disconnected and reconnected while the computer is on. The effect of this can be shown as 'listen.sh record live' showing sox errors in opening a pcm device. Be sure to use 'listen.sh devices' to check the current numbers for your device and edit both listen.cfg and /etc/asound.conf accordingly.
 
 [listen is licensed under the GNU General Public License v3.0](../LICENSE.txt)
 

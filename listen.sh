@@ -152,7 +152,29 @@ error() {
   exit 1
 }
 
+stop(){
+    check_root
+    running_tasks=0
+    for PGID in PGID_RECORD PGID_STREAM_SEND PGID_STREAM_RECEIVE PGID_VIDEO
+      do
+        if cfg_haskey $PGID; then (( running_tasks+=1 )); else continue; fi
+        squash $PGID
+        cfg_delete "$CONFIG_FILE" $PGID
+      done
+    if [[ $running_tasks = 0 ]]; then error "$__BASE was not running anyway, so there was nothing to terminate."; fi
+    # return CPU scaling governor to what it was before running program
+    sh -c "echo -n $CPU_SCALING_GOVERNOR_OLD > $CPU_SCALING_GOVERNOR_FILE"
+
+    if [ $(ls "$BUFFER_FILE" -l | tr -s ' ' | cut -d' ' -f5) -gt 1024 ]; then	# if more than 1 KB in buffer, make copy before closing
+#   if [ -s "$BUFFER_FILE" ]; then 
+      mv "$BUFFER_FILE" "$BUFFER_DIR"/$DATE.recording.wav      
+      warn "Buffer was not empty on stopping, saved to $BUFFER_DIR/$DATE.recording.wav"
+    fi
+    rm "$BUFFER_FILE" 2>/dev/null; touch "$BUFFER_FILE"
+}
+
 record_wav(){
+  SOXNOW="1"
   while true; do
     sox -t alsa -d -c 2 -r 48000 -b 24 "$BUFFER_FILE" silence 1 0 -70d 1 $WAIT_IN_SECONDS -70d
     DATE=$(date +%Y-%m-%d--%H-%M-%S)
@@ -182,7 +204,17 @@ record_wav(){
     #   cfg_delete "$CONFIG_FILE" $PGID	# kill video PGID and restart video function
     # can run video only with record, can not run video on its own. Would have to introduce delete buffer after end option.
     # DATE=$(date +%Y-%m-%d--%H-%M-%S)
+    SOXPREV="$SOXNOW"
+    SOXNOW=$(date +%s)
+    if [ $(( "$SOXNOW" - "$SOXPREV" )) -lt 3 ]; then		# check that more than 3 seconds elapsed since last recording to make sure audio device is readable
+      SOXEXIT="1"
+      break
+    fi
   done
+if [[ "$SOXEXIT" == "1" ]]; then
+  warn "Wrong audio device selected. Read section about setting up devices in readme. Stopping all processes. You should re-run this program with stop option to clear the configuration file."
+  stop
+fi
 }
 
 encode_mp3(){
@@ -353,24 +385,7 @@ esac
 
 case "$1" in
   "stop")
-    check_root
-    running_tasks=0
-    for PGID in PGID_RECORD PGID_STREAM_SEND PGID_STREAM_RECEIVE PGID_VIDEO
-      do
-        if cfg_haskey $PGID; then (( running_tasks+=1 )); else continue; fi
-        squash $PGID
-        cfg_delete "$CONFIG_FILE" $PGID
-      done
-    if [[ $running_tasks = 0 ]]; then error "$__BASE was not running anyway, so there was nothing to terminate."; fi
-    # return CPU scaling governor to what it was before running program
-    sh -c "echo -n $CPU_SCALING_GOVERNOR_OLD > $CPU_SCALING_GOVERNOR_FILE"
-
-    if [ $(ls "$BUFFER_FILE" -l | tr -s ' ' | cut -d' ' -f5) -gt 1024 ]; then	# if more than 1 KB in buffer, make copy before closing
-#   if [ -s "$BUFFER_FILE" ]; then 
-      mv "$BUFFER_FILE" "$BUFFER_DIR"/$DATE.recording.wav      
-      warn "Buffer was not empty on stopping, saved to $BUFFER_DIR/$DATE.recording.wav"
-    fi
-    rm "$BUFFER_FILE" 2>/dev/null; touch "$BUFFER_FILE"
+    stop
   ;;
   "like")
     if unwritable_directory SAVE; then

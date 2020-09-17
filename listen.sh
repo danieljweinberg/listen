@@ -174,7 +174,7 @@ stop(){
 }
 
 record_wav(){
-  SOXNOW="1"
+  SOXNOW="1"		# For flagging wrong audio device if needed.
   while true; do
     sox -t alsa -d -c 2 -r 48000 -b 24 "$BUFFER_FILE" silence 1 0 -70d 1 $WAIT_IN_SECONDS -70d
     DATE=$(date +%Y-%m-%d--%H-%M-%S)
@@ -196,25 +196,23 @@ record_wav(){
     else
       error "invalid \$SAVE_FORMAT specified. Valid options are wav or mp3. Buffer can not be saved." 
     fi
-  # LISTEN BUFFER IS EMPTY, BUT VLC IS STILL RUNNING, SO KILL VLC
-  # kill vlc and video, move buffer, call video
-    # if cfg_haskey PGID_VIDEO; then
-    ##   killall -2 vlc
-    #    kill -2 -"$(cfg_read $PGID_VIDEO)"	# use this one
-    #   cfg_delete "$CONFIG_FILE" $PGID	# kill video PGID and restart video function
-    # can run video only with record, can not run video on its own. Would have to introduce delete buffer after end option.
-    # DATE=$(date +%Y-%m-%d--%H-%M-%S)
+
+  # CHECK IF FUNCTIONAL AUDIO DEVICE IS IN USE AND FLAG IF NOT
+
     SOXPREV="$SOXNOW"
-    SOXNOW=$(date +%s)
-    if [ $(( "$SOXNOW" - "$SOXPREV" )) -lt 3 ]; then		# check that more than 3 seconds elapsed since last recording to make sure audio device is readable
+    SOXNOW=$(date +%s)					# Date in seconds since Unix epoch.
+    if [ $(( "$SOXNOW" - "$SOXPREV" )) -lt 3 ]; then	# Indication of wrong audio device is quickly repeated sox initiations. If detected, flag.
       SOXEXIT="1"
       break
     fi
   done
-if [[ "$SOXEXIT" == "1" ]]; then
-  warn "Wrong audio device selected. Read section about setting up devices in readme. Stopping all processes. You should re-run this program with stop option to clear the configuration file."
-  stop
-fi
+
+  # IF FLAGGED, SHUTDOWN PROGRAM
+
+  if [[ "$SOXEXIT" == "1" ]]; then
+    warn "Audio device doesn't work. Probably the wrong device is specified as default ALSA audio device in /etc/asound.conf . See --Setting Up Devices-- in readme. $__BASE will end. You should re-run this program with stop option to clear the configuration file."
+    stop
+  fi
 }
 
 encode_mp3(){

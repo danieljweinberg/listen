@@ -23,7 +23,7 @@ After years of composing music on my digital piano, and recording it only someti
 - [netcat](http://netcat.sourceforge.net/) ("nc", to stream)
 
 ## Setup
-Before first use: open _listen.cfg.template_ in a text editor and edit the file paths and other parameters to match your environment. Then rename file to _listen.cfg_.
+The only files required for _listen_ to run are listen.sh and listen.cfg. Before first use: open _listen.cfg.template_ in a text editor and edit the file paths and other parameters to match your environment. Then rename file to _listen.cfg_.
 
 ### Configurable Parameters
 Path to directories for: saving audio, buffering audio, the log file, and the temporary configuration file. (On first run, _listen_ creates these latter three files.)
@@ -39,15 +39,17 @@ Wait in seconds: stop recording after the instrument is silent for this long. Th
 listen.sh [primary_required_option] [secondary_optional_option]
 ```
 
-Run _listen_ with sudo privileges.
+Run _listen_ with superuser (sudo) privileges. Except for video option, which requires that you NOT run _listen_ as superuser.
 
 
 ### Primary options (1 is required)
-  **record**	begin recording WAV and MIDI in the background
+  **record**	begin listening for audio in the background, record MP3 and MIDI for any audio played
   
   **send**		start an audio stream
   
   **receive**	receive an audio stream, from $SEND_IP if configured
+
+  **video**	begin listening for audio in the background, record MP4 video from an IP camera when audio is played
   
   **like**		put a timestamped zero-byte text file in the SAVE directory, a bookmark which can remind you to keep a recording
   

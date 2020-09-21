@@ -49,13 +49,18 @@ cfg_haskey() { # key
 exists(){ command -v "$1" >/dev/null 2>&1; }	# from https://stackoverflow.com/posts/34143401/revisions
 
 # SET LOCATION OF CONFIG FILE, USING POINTER FILE IF APPLICABLE
-
+#
 # ------------------------------------------------------------------------------
 #
 # listen relies on a CONFIG_FILE in the same directory as listen. If you need
 #   CONFIG_FILE to live elsewhere (e.g. due to file permissions or to support
 #   multiple users or implementations), then a POINTER_FILE in the same
 #   directory as listen will tell listen where to find the CONFIG_FILE. 
+#
+#   If needed, listen_config_pointer.cfg should be in the same directory as
+#   listen.sh and contain just one line as in this example:
+#
+#   CONFIG_DIR=/home/pi
 #
 # ------------------------------------------------------------------------------
 
@@ -68,6 +73,14 @@ else
 fi
 
 CONFIG_FILE="$CONFIG_DIR/$__BASE.cfg"	
+
+if ! exists "$CONFIG_FILE"; then
+  echo >&2 "$__BASE.cfg not found in $CONFIG_DIR. If this is your first time \
+running the program, make sure you have edited $__BASE.cfg.template and \
+renamed it $__BASE.cfg . If you don't have the template file, obtain it from \
+https://github.com/danieljweinberg/listen . $__BASE will exit."
+  exit 1
+fi
 
 # PULL LOCATIONS FROM CONFIG FILE
 

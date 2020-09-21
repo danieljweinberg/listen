@@ -59,3 +59,5 @@ LOGGING=on
 CAMUSER=user
 CAMPWD=password
 CAMIP=10.0.0.5
+
+# Don't touch anything below this line, as these are settings created by listen during runtime.

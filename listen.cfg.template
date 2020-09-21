@@ -1,0 +1,26 @@
+# hold variables
+
+SAVE_DIR=~
+BUFFER_DIR=~
+LOG_DIR=~
+
+BACKUP_DIR=~
+
+SAVE_low_disk_space=500
+BUFFER_low_disk_space=500
+
+ABRAINSTORM_PATH=/home/pi/midi-utilities/bin/abrainstorm
+CPU_SCALING_GOVERNOR_FILE=/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+MIDI_PORT=24\ 0
+SEND_IP=10.0.0.2
+WAIT_IN_SECONDS=30.0
+
+WATCHDOG=off
+WATCHDOG_INTERVAL=30m
+BACKUP_SCRIPT=off
+
+SAVE_FORMAT=mp3
+LOGGING=on
+CAMUSER=user
+CAMPWD=password
+CAMIP=10.0.0.5

@@ -23,16 +23,18 @@ After years of composing music on my digital piano, and recording it only someti
 - [netcat](http://netcat.sourceforge.net/) ("nc", to stream)
 
 ## Setup
-The only files required for _listen_ to run are listen.sh and listen.cfg. Before first use: open _listen.cfg.template_ in a text editor and edit the file paths and other parameters to match your environment. Then rename file to _listen.cfg_.
+The only files required for _listen_ to run are _listen.sh_ and _listen.cfg_. Before first use: open _listen.cfg.template_ in a text editor and edit the file paths and other parameters to match your environment. Then rename file to _listen.cfg_.
 
 ### Configurable Parameters
-Path to directories for: saving audio, buffering audio, the log file, and the temporary configuration file. (On first run, _listen_ creates these latter three files.)
+Path to directories for: saving audio, buffering audio, the log file, and the temporary configuration file. (On first run, _listen_ creates the buffer and log.)
 
 Minimum hard disk space required to save: if the program detects there is less than this amount free it will not start up, so that your disk isn't filled. The default is 500 MB, which is a few hours of audio.
 
 MIDI port: identifier of your soundcard for MIDI recording purposes, run the progress with _devices_ option to find out what it is, and put it into the parameter, replacing colon with space. (e.g. 20 0)
 
 Wait in seconds: stop recording after the instrument is silent for this long. The default is 30 seconds.
+
+More parameters described in _listen.cfg.template_.
 
 ## Usage
 ```

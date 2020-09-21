@@ -79,13 +79,17 @@ _listen_ has a few debug methods. In addition to the above secondary command whi
 ## Notes on setting up devices
 MIDI recording will use the MIDI PORT parameter.
 Audio recording will use the default device according to your system.
-Set the default audio device for recording by creating /etc/asound.conf with following two lines. Replace "1" with number of your card determined with **devices** option.
+Set the default audio device for recording by creating /etc/asound.conf with following two lines. 
+Replace "1" with number of your card determined with **devices** option.
 
 ```
 defaults.pcm.card 1
 defaults.ctl.card 1
 ```
-The number of your audio device may change if it is disconnected and reconnected while the computer is on. The effect of this can be shown as 'listen.sh record live' showing sox errors in opening a pcm device. Be sure to use 'listen.sh devices' to check the current numbers for your device and edit both listen.cfg and /etc/asound.conf accordingly.
+The number of your audio device may change if it is disconnected and reconnected while the computer is on.
+If the number in asound.conf refers to a now-absent device, listen will tell you with an error.
+Be sure to use 'listen.sh devices' to check the current numbers for your device and edit both 
+listen.cfg and /etc/asound.conf accordingly.
 
 [listen is licensed under the GNU General Public License v3.0](../LICENSE.txt)
 

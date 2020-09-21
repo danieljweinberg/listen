@@ -71,9 +71,6 @@ CONFIG_FILE="$CONFIG_DIR/$__BASE.cfg"
 
 # PULL LOCATIONS FROM CONFIG FILE
 
-for a in SAVE_DIR BUFFER_DIR LOG_DIR BACKUP_DIR
-  do eval $a=$(cfg_read $a); done 
-
 # ------------------------------------------------------------------------------
 #
 # In $CONFIG_FILE you can specify the respective locations for:
@@ -90,21 +87,29 @@ for a in SAVE_DIR BUFFER_DIR LOG_DIR BACKUP_DIR
 
 # PULL SETTINGS FROM CONFIG FILE
 
-SAVE_low_disk_space=$(cfg_read SAVE_low_disk_space)		# if free space is under this many MB, program won't record
-BUFFER_low_disk_space=$(cfg_read BUFFER_low_disk_space)		# if free space is under this many MB, program won't record
-ABRAINSTORM_PATH=$(cfg_read ABRAINSTORM_PATH)			# path to binary
-CPU_SCALING_GOVERNOR_FILE=$(cfg_read CPU_SCALING_GOVERNOR_FILE)
-MIDI_PORT=$(cfg_read MIDI_PORT)					# MIDI port to use, with space instead of colon
-SEND_IP=$(cfg_read SEND_IP)					# IP address of computer connected to instrument, needed in receiving computer
-WAIT_IN_SECONDS=$(cfg_read WAIT_IN_SECONDS)			# time to wait after end of playing to start saving a WAV and MIDI, must specify tenths of seconds or sox treats as 0 seconds
-WATCHDOG=$(cfg_read WATCHDOG)					# on or off: write to log the running processes every X time (interpreted by sleep command)
-WATCHDOG_INTERVAL=$(cfg_read WATCHDOG_INTERVAL)			# X for above. Default is 30m
-BACKUP_SCRIPT=$(cfg_read BACKUP_SCRIPT)				# on or off: make a backup of the script at runtime (for debugging)
-SAVE_FORMAT=$(cfg_read SAVE_FORMAT)				# if mp3, wavs will be saved in BUFFER_DIR and mp3s in SAVE_DIR. if wav, only the BUFFER_FILE will be saved in BUFFER_DIR -- the final wav will be saved in SAVE_DIR
-LOGGING=$(cfg_read LOGGING)
-CAMUSER=$(cfg_read CAMUSER)
-CAMPWD=$(cfg_read CAMPWD)
-CAMIP=$(cfg_read CAMIP)
+#SAVE_low_disk_space	# if free space is under this many MB, program won't record audio or MIDI
+#BUFFER_low_disk_space	# if free space is under this many MB, program won't record audio but can record MIDI
+#ABRAINSTORM_PATH	# path to binary
+#CPU_SCALING_GOVERNOR_FILE
+#MIDI_PORT	# MIDI port to use, with backslash-space ("\ ") instead of colon
+#SEND_IP	# IP address of computer connected to instrument, needed in receiving computer
+#WAIT_IN_SECONDS	#time to wait after end of playing to start saving a WAV and MIDI, must specify tenths of seconds or sox treats as 0 seconds
+#WATCHDOG	# on or off: write to log the running processes every X time (interpreted by sleep command)
+#WATCHDOG_INTERVAL	# X for above. Default is 30m
+#BACKUP_SCRIPT	# on or off: make a backup of the script at runtime (for debugging)
+#SAVE_FORMAT	# if mp3, wavs will be saved in BUFFER_DIR and mp3s in SAVE_DIR. if wav, only the BUFFER_FILE will be saved in BUFFER_DIR -- the final wav will be saved in SAVE_DIR
+#LOGGING
+#CAMUSER
+#CAMPWD
+#CAMIP
+
+for var in \
+SAVE_DIR BUFFER_DIR LOG_DIR BACKUP_DIR \
+SAVE_low_disk_space BUFFER_low_disk_space ABRAINSTORM_PATH \
+CPU_SCALING_GOVERNOR_FILE MIDI_PORT SEND_IP WAIT_IN_SECONDS \
+WATCHDOG WATCHDOG_INTERVAL BACKUP_SCRIPT SAVE_FORMAT LOGGING CAMUSER CAMPWD \
+CAMIP
+  do eval $var=$(cfg_read $var); done
 
 # MIDI takes 1-3 seconds even when 30 minutes of playing
 # LAME takes about 0.5 of the time spent playing (e.g. 15 min to encode 30 min)
@@ -210,7 +215,10 @@ record_wav(){
   # IF FLAGGED, SHUTDOWN PROGRAM
 
   if [[ "$SOXEXIT" == "1" ]]; then
-    warn "Audio device doesn't work. Probably the wrong device is specified as default ALSA audio device in /etc/asound.conf . See --Setting Up Devices-- in readme. $__BASE will end. You should re-run this program with stop option to clear the configuration file."
+    warn "Audio device doesn't work. Probably the wrong device is specified \
+as default ALSA audio device in /etc/asound.conf . See --Setting Up Devices-- \
+in readme. $__BASE will end. You should re-run this program with stop option \
+to clear the configuration file."
     stop
   fi
 }
@@ -294,7 +302,7 @@ record(){
 
 video(){
   # IF LISTEN BUFFER HAS DATA, PIANO IS BEING PLAYED, SO START RECORDING VIDEO
-  cfg_write PGID_VIDEO $(pgid $!)
+
   while true; do
     if [ -s "$BUFFER_FILE" ]; then	# if filesize > 0
       # LISTEN BUFFER IS NOT EMPTY, SO START VLC 
@@ -406,6 +414,7 @@ case "$1" in
       error "$__BASE is already $TYPE."
     fi
     video &
+    cfg_write PGID_VIDEO $(pgid $!)
   ;;
   "record")
     check_root
@@ -498,7 +507,6 @@ for check in unwritable_directory file_inaccessible
     if $check LOG; then
       echo >&2 "${!a} : ${check//_/ }, $__BASE will continue as normal but no events will be logged."
       LOGGING=off
-      #cfg_write LOGGING "$LOGGING"
     fi
   done
 

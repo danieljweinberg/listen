@@ -1,4 +1,8 @@
 *.log
 *.cfg
 *.bak
+*.mp3
+*.wav
+*.mid
+*.mp4
 *buffer*

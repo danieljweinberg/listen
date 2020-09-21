@@ -23,7 +23,7 @@ After years of composing music on my digital piano, and recording it only someti
 - [netcat](http://netcat.sourceforge.net/) ("nc", to stream)
 
 ## Setup
-Before first use: open _listen.sh_ in a text editor and edit the file paths and other parameters to match your environment.
+Before first use: open _listen.cfg.template_ in a text editor and edit the file paths and other parameters to match your environment. Then rename file to _listen.cfg_.
 
 ### Configurable Parameters
 Path to directories for: saving audio, buffering audio, the log file, and the temporary configuration file. (On first run, _listen_ creates these latter three files.)

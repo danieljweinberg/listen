@@ -1,26 +1,61 @@
-# hold variables
+# ------------------------------------------------------------------------------
+#
+# In $CONFIG_FILE you can specify the respective locations for:
+# 
+# (SAVE) the folder for completed recordings
+# (BUFFER) temporary files while the instrument is being played
+# (LOG) log for program events
+# (BACKUP) optional backup of this script each time it's run, for debugging
+#
+# The $CONFIG_FILE will also be populated with the process group ID, necessary
+#   to kill processes
+#
+# ------------------------------------------------------------------------------
 
 SAVE_DIR=~
 BUFFER_DIR=~
 LOG_DIR=~
-
 BACKUP_DIR=~
 
+#SAVE_low_disk_space	# if free space is under this many MB, program won't record audio or MIDI
 SAVE_low_disk_space=500
+
+#BUFFER_low_disk_space	# if free space is under this many MB, program won't record audio but can record MIDI
 BUFFER_low_disk_space=500
 
+#ABRAINSTORM_PATH	# path to binary
 ABRAINSTORM_PATH=/home/pi/midi-utilities/bin/abrainstorm
+
+#CPU_SCALING_GOVERNOR_FILE
 CPU_SCALING_GOVERNOR_FILE=/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+
+#MIDI_PORT		# MIDI port to use, with backslash-space ("\ ") instead of colon
 MIDI_PORT=24\ 0
+
+#SEND_IP		# IP address of computer connected to instrument, needed in receiving computer
 SEND_IP=10.0.0.2
+
+#WAIT_IN_SECONDS	#time to wait after end of playing to start saving a WAV and MIDI, must specify tenths of seconds or sox treats as 0 seconds
 WAIT_IN_SECONDS=30.0
 
+#WATCHDOG		# on or off: write to log the running processes every X time (interpreted by sleep command)
 WATCHDOG=off
+
+#WATCHDOG_INTERVAL	# X for above. Default is 30m
 WATCHDOG_INTERVAL=30m
+
+#BACKUP_SCRIPT		# on or off: make a backup of the script at runtime (for debugging)
 BACKUP_SCRIPT=off
 
+#SAVE_FORMAT		# if mp3, wavs will be saved in BUFFER_DIR and mp3s in SAVE_DIR. if wav, only the BUFFER_FILE will be saved in BUFFER_DIR -- the final wav will be saved in SAVE_DIR
 SAVE_FORMAT=mp3
+
+#LOGGING
 LOGGING=on
+
+#CAMUSER
+#CAMPWD
+#CAMIP
 CAMUSER=user
 CAMPWD=password
 CAMIP=10.0.0.5

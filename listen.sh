@@ -49,7 +49,7 @@ cfg_haskey() { # key
 exists(){ command -v "$1" >/dev/null 2>&1; }	# from https://stackoverflow.com/posts/34143401/revisions
 
 # SET LOCATION OF CONFIG FILE, USING POINTER FILE IF APPLICABLE
-#
+
 # ------------------------------------------------------------------------------
 #
 # listen relies on a CONFIG_FILE in the same directory as listen. If you need
@@ -75,46 +75,16 @@ fi
 CONFIG_FILE="$CONFIG_DIR/$__BASE.cfg"	
 
 if ! exists "$CONFIG_FILE"; then
-  echo >&2 "$__BASE.cfg not found in $CONFIG_DIR. If this is your first time \
-running the program, make sure you have edited $__BASE.cfg.template and \
-renamed it $__BASE.cfg . If you don't have the template file, obtain it from \
-https://github.com/danieljweinberg/listen . $__BASE will exit."
+  echo -e >&2 "\n**FATAL ERROR**\n**Configuration file not found.**\n\
+($__BASE.cfg not found in $CONFIG_DIR)\n\nIf this is your first time running \
+the program, make sure to:\n(1) edit $__BASE.cfg.template and \n(2) \
+rename it $__BASE.cfg\n\nIf you don't have the template file, obtain it from \
+https://github.com/danieljweinberg/listen\n\
+$__BASE will exit.\n"
   exit 1
 fi
 
-# PULL LOCATIONS FROM CONFIG FILE
-
-# ------------------------------------------------------------------------------
-#
-# In $CONFIG_FILE you can specify the respective locations for:
-# 
-# (SAVE) the folder for completed recordings
-# (BUFFER) temporary files while the instrument is being played
-# (LOG) log for program events
-# (BACKUP) optional backup of this script each time it's run, for debugging
-#
-# The $CONFIG_FILE will also be populated with the process group ID, necessary
-#   to kill processes
-#
-# ------------------------------------------------------------------------------
-
-# PULL SETTINGS FROM CONFIG FILE
-
-#SAVE_low_disk_space	# if free space is under this many MB, program won't record audio or MIDI
-#BUFFER_low_disk_space	# if free space is under this many MB, program won't record audio but can record MIDI
-#ABRAINSTORM_PATH	# path to binary
-#CPU_SCALING_GOVERNOR_FILE
-#MIDI_PORT	# MIDI port to use, with backslash-space ("\ ") instead of colon
-#SEND_IP	# IP address of computer connected to instrument, needed in receiving computer
-#WAIT_IN_SECONDS	#time to wait after end of playing to start saving a WAV and MIDI, must specify tenths of seconds or sox treats as 0 seconds
-#WATCHDOG	# on or off: write to log the running processes every X time (interpreted by sleep command)
-#WATCHDOG_INTERVAL	# X for above. Default is 30m
-#BACKUP_SCRIPT	# on or off: make a backup of the script at runtime (for debugging)
-#SAVE_FORMAT	# if mp3, wavs will be saved in BUFFER_DIR and mp3s in SAVE_DIR. if wav, only the BUFFER_FILE will be saved in BUFFER_DIR -- the final wav will be saved in SAVE_DIR
-#LOGGING
-#CAMUSER
-#CAMPWD
-#CAMIP
+# PULL LOCATIONS AND SETTINGS FROM CONFIG FILE
 
 for var in \
 SAVE_DIR BUFFER_DIR LOG_DIR BACKUP_DIR \

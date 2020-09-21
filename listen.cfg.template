@@ -17,37 +17,37 @@ BUFFER_DIR=~
 LOG_DIR=~
 BACKUP_DIR=~
 
-#SAVE_low_disk_space	# if free space is under this many MB, program won't record audio or MIDI
+# if free space is under this many MB, program won't record audio or MIDI
 SAVE_low_disk_space=500
 
-#BUFFER_low_disk_space	# if free space is under this many MB, program won't record audio but can record MIDI
+# if free space is under this many MB, program won't record audio but can record MIDI
 BUFFER_low_disk_space=500
 
-#ABRAINSTORM_PATH	# path to binary
+# path to abrainstorm binary, a program which listens for audio and creates MIDI. You will need to download from the creator's website if you haven't already.
 ABRAINSTORM_PATH=/home/pi/midi-utilities/bin/abrainstorm
 
-#CPU_SCALING_GOVERNOR_FILE
+# At least on Raspberry Pi zero, controls CPU speed shifting. This shift can cause audio crackle, so listen disables it by changing the CPU scaling governor to "performance." Don't change this unless you know what you're doing.
 CPU_SCALING_GOVERNOR_FILE=/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
 
-#MIDI_PORT		# MIDI port to use, with backslash-space ("\ ") instead of colon
+# MIDI port to use, with backslash-space ("\ ") instead of colon
 MIDI_PORT=24\ 0
 
-#SEND_IP		# IP address of computer connected to instrument, needed in receiving computer
+# IP address of computer connected to instrument, needed in receiving computer
 SEND_IP=10.0.0.2
 
-#WAIT_IN_SECONDS	#time to wait after end of playing to start saving a WAV and MIDI, must specify tenths of seconds or sox treats as 0 seconds
+# time to wait after end of playing to start saving a WAV and MIDI, must specify tenths of seconds or sox treats as 0 seconds
 WAIT_IN_SECONDS=30.0
 
-#WATCHDOG		# on or off: write to log the running processes every X time (interpreted by sleep command)
+# on or off: write to log the running processes every X time (interpreted by sleep command)
 WATCHDOG=off
 
-#WATCHDOG_INTERVAL	# X for above. Default is 30m
+# X for above.
 WATCHDOG_INTERVAL=30m
 
-#BACKUP_SCRIPT		# on or off: make a backup of the script at runtime (for debugging)
+# on or off: make a backup of the script at runtime (for debugging)
 BACKUP_SCRIPT=off
 
-#SAVE_FORMAT		# if mp3, wavs will be saved in BUFFER_DIR and mp3s in SAVE_DIR. if wav, only the BUFFER_FILE will be saved in BUFFER_DIR -- the final wav will be saved in SAVE_DIR
+# if mp3, wavs will be saved in BUFFER_DIR and mp3s in SAVE_DIR. if wav, only the BUFFER_FILE will be saved in BUFFER_DIR -- the final wav will be saved in SAVE_DIR
 SAVE_FORMAT=mp3
 
 #LOGGING

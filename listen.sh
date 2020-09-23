@@ -13,6 +13,8 @@
 # 
 # ==============================================================================
 
+if [[ "$2" == "debug" ]]; then set -o xtrace; fi
+
 __DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"	#/../../	, directory where the file is saved
 __FILE="${__DIR}/$(basename "${BASH_SOURCE[0]}")"	#/../../...sh	, full path and filename
 __BASE="$(basename ${__FILE} .sh)"			#...		, filename before extension, used for referring to the program in terminal messages
@@ -31,11 +33,15 @@ cfg_write() { # key, value
 }
 
 cfg_read() { # key -> value
-  grep "^$(echo "$1" | sed_escape)=" "$CONFIG_FILE" | sed "s/^$(echo "$1" | sed_escape)=//" | tail -1
+  grep "^$(echo "$1" | sed_escape)=" "$CONFIG_FILE" \
+  | sed "s/^$(echo "$1" | sed_escape)=//" \
+  | tail -1
 }
 
 cfg_point() { # key -> value
-  grep "^$(echo "$1" | sed_escape)=" "$POINTER_FILE" | sed "s/^$(echo "$1" | sed_escape)=//" | tail -1
+  grep "^$(echo "$1" | sed_escape)=" "$POINTER_FILE" \
+  | sed "s/^$(echo "$1" | sed_escape)=//" \
+  | tail -1
 }
 
 cfg_delete() { # (path), key
@@ -72,15 +78,24 @@ else
   CONFIG_DIR="$__DIR"
 fi
 
-CONFIG_FILE="$CONFIG_DIR/$__BASE.cfg"	
+CONFIG_FILE="$CONFIG_DIR/$__BASE.cfg"
+
+ERROR_NOCONFIG="
+**FATAL ERROR**
+**Configuration file not found.**
+($__BASE.cfg not found in $CONFIG_DIR)
+
+If this is your first time running the program, make sure to:
+(1) edit $__BASE.cfg.template and
+(2) rename it $__BASE.cfg
+
+If you don't have the template file, obtain it from
+https://github.com/danieljweinberg/listen
+$__BASE will exit.
+"
 
 if ! exists "$CONFIG_FILE"; then
-  echo -e >&2 "\n**FATAL ERROR**\n**Configuration file not found.**\n\
-($__BASE.cfg not found in $CONFIG_DIR)\n\nIf this is your first time running \
-the program, make sure to:\n(1) edit $__BASE.cfg.template and \n(2) \
-rename it $__BASE.cfg\n\nIf you don't have the template file, obtain it from \
-https://github.com/danieljweinberg/listen\n\
-$__BASE will exit.\n"
+  echo "$ERROR_NOCONFIG"
   exit 1
 fi
 
@@ -102,13 +117,30 @@ VIDEO_BUFFER_FILE="$BUFFER_DIR/${__BASE}_buffer.mp4"
 
 LOG_FILE="$LOG_DIR/$__BASE.log"	
 
-unwritable_directory(){ a="$1_DIR"; [[ ( ! -w ${!a} ) || ( ! -d ${!a} ) ]]; }
-file_inaccessible(){ a="$1_FILE"; [[ "$(touch "${!a}" 2>&1)" != "" ]]; }
-low_disk_space(){ a="$1_DIR"; b="$1_low_disk_space"; [ $(df -m ${!a} | tail -1 | tr -s ' ' | cut -d' ' -f4) -lt ${!b} ]; }
+unwritable_directory(){
+  a="$1_DIR"
+  [[ ( ! -w ${!a} ) || ( ! -d ${!a} ) ]]
+}
+
+file_inaccessible(){
+  a="$1_FILE"
+  [[ "$(touch "${!a}" 2>&1)" != "" ]]
+}
+
+low_disk_space(){
+  a="$1_DIR"; b="$1_low_disk_space"
+  [ $(df -m ${!a} | tail -1 | tr -s ' ' | cut -d' ' -f4) -lt ${!b} ]
+}
+
 status(){ echo -e "$DATE\t$TYPE $ACTION"; }
 pgid(){ ps -o pgid= $1 | grep -o '[0-9]*' ; }
 squash(){ if cfg_haskey "$1"; then kill -15 -"$(cfg_read $1)"; fi; }	# sig9 leaves buffer.wav at 0 bytes, sig15 leaves buffer.wav at 80 bytes
-check_root(){ if [[ $(/usr/bin/id -u -u) != "0" ]]; then error "This function requires that you run $__BASE as root user."; fi }
+
+check_root(){
+  if [[ $(/usr/bin/id -u -u) != "0" ]]; then
+    error "This function requires that you run $__BASE as root user."
+  fi
+}
 
 warn() {
   ACTION_PRIOR="$ACTION"
@@ -164,7 +196,8 @@ stop(){
 record_wav(){
   SOXNOW="1"		# For flagging wrong audio device if needed.
   while true; do
-    sox -t alsa -d -c 2 -r 48000 -b 24 "$BUFFER_FILE" silence 1 0 -70d 1 $WAIT_IN_SECONDS -70d
+    sox -t alsa -d -c 2 -r 48000 -b 24 "$BUFFER_FILE" \
+      silence 1 0 -70d 1 $WAIT_IN_SECONDS -70d
     DATE=$(date +%Y-%m-%d--%H-%M-%S)
     TYPE="recording"
     ACTION="done"
@@ -207,7 +240,10 @@ to clear the configuration file."
 }
 
 encode_mp3(){
-  nice -10 lame --preset extreme "$BUFFER_DIR"/$DATE.recording.wav "$SAVE_DIR"/$DATE.recording.mp3	# de-prioritizes lame encoding so that sox will have plenty of cycles to record again if needed during encoding
+  nice -10 lame --preset extreme \
+    "$BUFFER_DIR"/$DATE.recording.wav \
+    "$SAVE_DIR"/$DATE.recording.mp3	# de-prioritizes lame encoding so that sox will have plenty of cycles to record again if needed during encoding
+
   rm "$BUFFER_DIR"/$DATE.recording.wav
 }
 
@@ -235,12 +271,16 @@ record_midi(){
 }
 
 stream_receive(){
-  nc $SEND_IP 3333|play -c 1 -b 16 -e signed -t raw -r 48k - &
+  nc $SEND_IP 3333\
+    |play -c 1 -b 16 -e signed -t raw -r 48k - &
+
   cfg_write PGID_STREAM_RECEIVE $(pgid $!)
 }
 
 stream_send(){
-  rec -c 1 -t raw - |nc -l 3333 &
+  rec -c 1 -t raw - \
+    |nc -l 3333 &
+
   cfg_write PGID_STREAM_SEND $(pgid $!)
 }
 
@@ -320,12 +360,14 @@ video(){
 }
 
 rtsp(){
-  vlc -I dummy rtsp://"$CAMUSER":"$CAMPWD"@"$CAMIP":8554/live --sout "#duplicate{dst=std{access=file,mux=mp4,dst='$VIDEO_BUFFER_FILE'},dst=nodisplay}"
+  vlc -I dummy rtsp://"$CAMUSER":"$CAMPWD"@"$CAMIP":8554/live \
+    --sout "#duplicate{dst=std{access=file,mux=mp4,dst='$VIDEO_BUFFER_FILE'}\
+    ,dst=nodisplay}"
 }
 
 # PROGRAM STARTS
 
-if [[ "$2" == "debug" ]]; then set -o xtrace; fi
+
 if cfg_haskey TYPE; then TYPE=$(cfg_read TYPE); else TYPE="not running"; fi
 DATE=$(date +%Y-%m-%d--%H-%M-%S)
 status
@@ -334,7 +376,8 @@ status
 
 if [[ $BACKUP_SCRIPT == "on" ]]; then
   if ! unwritable_directory BACKUP; then
-    mkdir -p "$BACKUP_DIR" && cp "$__FILE" "$BACKUP_DIR/${__BASE}_${DATE}.sh.bak"
+    mkdir -p "$BACKUP_DIR" && cp "$__FILE" \
+      "$BACKUP_DIR/${__BASE}_${DATE}.sh.bak"
     echo "$__BASE backup saved"
   else
     warn "${!a} unwritable : $__BASE backup could not be saved."
@@ -385,7 +428,9 @@ case "$1" in
     fi
   ;;
   "video")
-    if [[ $(/usr/bin/id -u -u) == "0" ]]; then error "This function requires that you NOT run $__BASE as root user."; fi
+    if [[ $(/usr/bin/id -u -u) == "0" ]]; then
+      error "This function requires that you NOT run $__BASE as root user."
+    fi
 
     if ! exists vlc; then
       error "vlc not present."
@@ -430,7 +475,9 @@ case "$1" in
     check_root
     if ! exists nc || ! exists sox; then
       error "nc or sox not present."
-    elif [[ $(/sbin/ip -o -4 addr list eth0 | awk '{print $4}' | cut -d/ -f1) == "$SEND_IP" ]]; then		# https://unix.stackexchange.com/questions/8518/how-to-get-my-own-ip-address-and-save-it-to-a-variable-in-a-shell-script
+    elif [[ $(/sbin/ip -o -4 addr list eth0 \
+      | awk '{print $4}' \
+      | cut -d/ -f1) == "$SEND_IP" ]]; then		# https://unix.stackexchange.com/questions/8518/how-to-get-my-own-ip-address-and-save-it-to-a-variable-in-a-shell-script
       error "This computer is already configured to send stream (\$SEND_IP is this computer's IP address), so receiving won't work."
     elif [[ "$TYPE" == "not running" ]]; then
       stream_receive >/dev/null 2>&1 &
@@ -455,10 +502,8 @@ case "$1" in
   ;;
   "devices")
     check_root
-    echo "Audio recording devices on this system:"
-    arecord -l
-    echo "MIDI recording devices on this system:"
-    arecordmidi -l
+    echo "Audio recording devices on this system:"; arecord -l
+    echo "MIDI recording devices on this system:"; arecordmidi -l
     exit 0
   ;;
   *)

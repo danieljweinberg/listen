@@ -77,7 +77,7 @@ _listen_ has a few debug methods. In addition to the above secondary command whi
 2. Every 30 minutes, write a list of all of _listen_'s running processes to the log file. Useful to track if the program was recording when you wanted it to be. **In record function, default: off**
 
 ## Notes on setting up devices
-MIDI recording will use the MIDI PORT parameter. 
+MIDI recording will use the MIDI PORT parameter.
 Audio recording will use the default device according to your system.
 Set the default audio device for recording by creating /etc/asound.conf with following two lines. 
 Replace "1" with number of your card determined with **devices** option.

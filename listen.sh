@@ -111,6 +111,7 @@ CAMIP
 
 # MIDI takes 1-3 seconds even when 30 minutes of playing
 # LAME takes about 0.5 of the time spent playing (e.g. 15 min to encode 30 min)
+# MP3: 1.5 MB/min (save), about 10 MB/min (buffer)
 
 BUFFER_FILE="$BUFFER_DIR/${__BASE}_buffer.wav"
 VIDEO_BUFFER_FILE="$BUFFER_DIR/${__BASE}_buffer.mp4"
@@ -249,11 +250,17 @@ encode_mp3(){
 
 log(){		# for debugging, watchdog function to record that program was running at a certain point in time
   while [ -w "$LOG_DIR" ]; do
+    echo "%%" >> "$LOG_FILE"
     DATE=$(date +%Y-%m-%d--%H-%M-%S)
     TYPE=$(cfg_read TYPE)
     ACTION=""
     status >> "$LOG_FILE"
-    echo -e "\nRunning Processes:\n$(ps | grep sox)\n$(sudo ps | grep abrainstorm)\n$(ps | grep lame)" >> "$LOG_FILE"
+    echo "% Running Processes:" >> "$LOG_FILE"    
+    for process in abrainstorm lame nc sox vlc
+    do
+      line="% $(ps | grep $process)"
+      if [[ $line != "% " ]]; then echo "$line" >> "$LOG_FILE"; fi
+    done
 
 # NEW HALT IF LOW SPACE FUNCTION
   for check in unwritable_directory low_disk_space
@@ -267,7 +274,7 @@ log(){		# for debugging, watchdog function to record that program was running at
     fi
   done
 # NEW - END
-
+    echo "%%" >> "$LOG_FILE"
     sleep "$WATCHDOG_INTERVAL"
 
   done

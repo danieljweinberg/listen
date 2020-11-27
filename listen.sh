@@ -254,7 +254,22 @@ log(){		# for debugging, watchdog function to record that program was running at
     ACTION=""
     status >> "$LOG_FILE"
     echo -e "\nRunning Processes:\n$(ps | grep sox)\n$(sudo ps | grep abrainstorm)\n$(ps | grep lame)" >> "$LOG_FILE"
+
+# NEW HALT IF LOW SPACE FUNCTION
+  for check in unwritable_directory low_disk_space
+  do
+    if $check SAVE; then
+      warn "${!a} : ${check//_/ }, no audio or MIDI can be saved. Program will end." 
+      stop
+    elif $check BUFFER; then
+      warn "${!a} : ${check//_/ }, no buffer audio can be saved. Program will end." 
+      stop
+    fi
+  done
+# NEW - END
+
     sleep "$WATCHDOG_INTERVAL"
+
   done
 }
 
@@ -303,7 +318,7 @@ record(){
   esac
 
   if exists sox; then
-    # on Raspberry Pi zero, disables CPU speed shifting which can cause audio crackle.
+    # on Raspberry Pi zero, disables CPU speed shifting causes audio crackle.
     cfg_write CPU_SCALING_GOVERNOR_OLD $(cat "$CPU_SCALING_GOVERNOR_FILE")
     sh -c "echo -n performance > $CPU_SCALING_GOVERNOR_FILE"
     if [[ "$live" = "true" ]]; then
@@ -319,7 +334,8 @@ record(){
 
   record_midi &			# wav then midi works best for $DATE congruence
   if [[ $WATCHDOG == "on" ]]; then
-    [ -w "$LOG_FILE" ] && log &	# for debugging, watchdog function to record that program was running at a certain point in time
+    [ -w "$LOG_FILE" ] && log &	# for debugging, watchdog function to record
+			# that program was running at a certain point in time
   fi
 }
 
@@ -334,11 +350,13 @@ video(){
       until [ ! -s "$BUFFER_FILE" ]	# until NOT filesize > 0
       # WAIT UNTIL LISTEN BUFFER IS EMPTY AGAIN, BEFORE EVALUATING
       do
-        # LISTEN BUFFER IS STILL NOT EMPTY, DON'T START VLC AGAIN WHICH WOULD OVERWRITE BUFFER VIDEO FILE
+        # LISTEN BUFFER IS STILL NOT EMPTY, DON'T START VLC AGAIN WHICH WOULD
+        # OVERWRITE BUFFER VIDEO FILE
         sleep 1
       done
     else
-      ps cax | grep vlc > /dev/null	# is vlc running?, source: https://stackoverflow.com/a/9118509
+      ps cax | grep vlc > /dev/null	# is vlc running?
+				#source: https://stackoverflow.com/a/9118509
     # replace with configuration value to monitor if video actively recording (cfg_read)
       if [ $? -eq 0 ]; then		# if ps successfully shows a running vlc
 	# LISTEN BUFFER IS EMPTY, BUT VLC IS STILL RUNNING, SO KILL VLC
@@ -372,7 +390,8 @@ if cfg_haskey TYPE; then TYPE=$(cfg_read TYPE); else TYPE="not running"; fi
 DATE=$(date +%Y-%m-%d--%H-%M-%S)
 status
 
-# BACKUP PROGRAM, for debugging code modifications, saves a copy of program each time any action taken
+# BACKUP PROGRAM, for debugging code modifications, saves a copy of program
+# each time any action taken
 
 if [[ $BACKUP_SCRIPT == "on" ]]; then
   if ! unwritable_directory BACKUP; then

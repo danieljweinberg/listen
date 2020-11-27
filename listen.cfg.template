@@ -17,10 +17,13 @@ BUFFER_DIR=~
 LOG_DIR=~
 BACKUP_DIR=~
 
-# if free space is under this many MB, program won't record audio or MIDI
+# checked at startup, and at each watchdog interval,
+# if free space is under this many MB, program won't record audio or MIDI and will end
 SAVE_low_disk_space=500
 
+# checked at startup, and at each watchdog interval,
 # if free space is under this many MB, program won't record audio but can record MIDI
+# when checked at watchdog interval, will also end program.
 BUFFER_low_disk_space=500
 
 # path to abrainstorm binary, a program which listens for audio and creates MIDI. You will need to download from the creator's website if you haven't already.

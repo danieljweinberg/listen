@@ -23,32 +23,32 @@ __BASE="$(basename ${__FILE} .sh)"			#...		, filename before extension, used for
 
 # FUNCTIONS FOR SETTING AND RETRIEVING VARIABLES FROM CONFIGURATION FILE
 
-sed_escape() { # this and below from https://unix.stackexchange.com/a/433816
+sed_escape(){ # this and below from https://unix.stackexchange.com/a/433816
   sed -e 's/[]\/$*.^[]/\\&/g'1
 }
 
-cfg_write() { # key, value
+cfg_write(){ # key, value
   cfg_delete "$CONFIG_FILE" "$1"
   echo "$1=$2" >> "$CONFIG_FILE"
 }
 
-cfg_read() { # key -> value
+cfg_read(){ # key -> value
   grep "^$(echo "$1" | sed_escape)=" "$CONFIG_FILE" \
   | sed "s/^$(echo "$1" | sed_escape)=//" \
   | tail -1
 }
 
-cfg_point() { # key -> value
+cfg_point(){ # key -> value
   grep "^$(echo "$1" | sed_escape)=" "$POINTER_FILE" \
   | sed "s/^$(echo "$1" | sed_escape)=//" \
   | tail -1
 }
 
-cfg_delete() { # (path), key
+cfg_delete(){ # (path), key
   sed -i "/^$(echo "$2" | sed_escape).*$/d" "$CONFIG_FILE"
 }
 
-cfg_haskey() { # key
+cfg_haskey(){ # key
   grep "^$(echo "$1" | sed_escape)=" "$CONFIG_FILE" > /dev/null 2>&1 || return 1
 }
 
@@ -143,7 +143,7 @@ check_root(){
   fi
 }
 
-warn() {
+warn(){	# for problems during runtime
   ACTION_PRIOR="$ACTION"
   ACTION="$ACTION_PRIOR (attempted) - WARNING"
   if [[ "$LOGGING" == "on" ]]; then
@@ -157,7 +157,7 @@ warn() {
   return 1
 }
 
-error() {
+error(){	# for problems at command initiation
   ACTION_PRIOR="$ACTION"
   ACTION="$ACTION_PRIOR (attempted) - FATAL ERROR"
   if [[ "$LOGGING" == "on" ]]; then
@@ -173,7 +173,7 @@ error() {
   exit 1
 }
 
-stop(){
+stop(){	# called if stop requested or if fatal error occurs during runtime
     check_root
     running_tasks=0
     for PGID in PGID_RECORD PGID_STREAM_SEND PGID_STREAM_RECEIVE PGID_VIDEO
@@ -248,35 +248,35 @@ encode_mp3(){
   rm "$BUFFER_DIR"/$DATE.recording.wav
 }
 
-log(){		# for debugging, watchdog function to record that program was running at a certain point in time
-  while [ -w "$LOG_DIR" ]; do
-    echo "%%" >> "$LOG_FILE"
+watchdog(){		# disk space check and optional check that program
+	# was running at a certain point in time
+  while true; do
     DATE=$(date +%Y-%m-%d--%H-%M-%S)
     TYPE=$(cfg_read TYPE)
     ACTION=""
-    status >> "$LOG_FILE"
-    echo "% Running Processes:" >> "$LOG_FILE"    
-    for process in abrainstorm lame nc sox vlc
+    if [ ! -w "$LOG_DIR" ]; then LOG_FILE="/dev/null"; fi
+    if [[ $WATCHDOG == "on" ]]; then	# optional check of running
+      echo "%%" >> "$LOG_FILE"
+      status >> "$LOG_FILE"
+      echo "% Running Processes:" >> "$LOG_FILE"    
+      for process in abrainstorm lame nc sox vlc
+      do
+        line="% $(ps | grep $process)"
+        if [[ $line != "% " ]]; then echo "$line" >> "$LOG_FILE"; fi
+      done
+      echo "%%" >> "$LOG_FILE"
+    fi
+# MANDATORY CHECK OF DISK SPACE, END IF UNDER LOW THRESHOLD
+    for check in unwritable_directory low_disk_space
     do
-      line="% $(ps | grep $process)"
-      if [[ $line != "% " ]]; then echo "$line" >> "$LOG_FILE"; fi
+      if $check SAVE || $check BUFFER; then
+        status >> "$LOG_FILE"
+        warn "${!a} : ${check//_/ }, program will end." 
+        stop
+      fi
     done
 
-# NEW HALT IF LOW SPACE FUNCTION
-  for check in unwritable_directory low_disk_space
-  do
-    if $check SAVE; then
-      warn "${!a} : ${check//_/ }, no audio or MIDI can be saved. Program will end." 
-      stop
-    elif $check BUFFER; then
-      warn "${!a} : ${check//_/ }, no buffer audio can be saved. Program will end." 
-      stop
-    fi
-  done
-# NEW - END
-    echo "%%" >> "$LOG_FILE"
     sleep "$WATCHDOG_INTERVAL"
-
   done
 }
 
@@ -340,10 +340,9 @@ record(){
   fi
 
   record_midi &			# wav then midi works best for $DATE congruence
-  if [[ $WATCHDOG == "on" ]]; then
-    [ -w "$LOG_FILE" ] && log &	# for debugging, watchdog function to record
-			# that program was running at a certain point in time
-  fi
+  watchdog &	# watchdog function checks disk space 
+		# regularly and optionally that program was running at
+		# a certain point in time
 }
 
 video(){

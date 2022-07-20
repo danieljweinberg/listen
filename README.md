@@ -41,7 +41,7 @@ More parameters described in _listen.cfg.template_.
 listen.sh [primary_required_option] [secondary_optional_option]
 ```
 
-Run _listen_ with superuser (sudo) privileges. Except for video option, which requires that you NOT run _listen_ as superuser.
+Run _listen_ with superuser (sudo) privileges. Except for experimental video option, which requires that you NOT run _listen_ as superuser.
 
 
 ### Primary options (1 is required)
@@ -51,7 +51,7 @@ Run _listen_ with superuser (sudo) privileges. Except for video option, which re
   
   **receive**	receive an audio stream, from $SEND_IP if configured
 
-  **video**	begin listening for audio in the background, record MP4 video from an IP camera when audio is played
+  **video**	(EXPERIMENTAL) begin listening for audio in the background, record MP4 video from an IP camera when audio is played
   
   **like**		put a timestamped zero-byte text file in the SAVE directory, a bookmark which can remind you to keep a recording
   

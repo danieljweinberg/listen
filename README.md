@@ -21,6 +21,7 @@ After years of composing music on my digital piano, and recording it only someti
 - [lame](https://lame.sourceforge.io/) (to convert WAV to MP3)
 - [abrainstorm](http://www.sreal.com/~div/midi-utilities/) (to record MIDI)
 - [netcat](http://netcat.sourceforge.net/) ("nc", to stream)
+- [vlc](https://www.videolan.org/) (to record video from IP camera)
 
 ## Setup
 The only files required for _listen_ to run are _listen.sh_ and _listen.cfg_. Before first use: open _listen.cfg.template_ in a text editor and edit the file paths and other parameters to match your environment. Then rename file to _listen.cfg_.
@@ -63,7 +64,7 @@ Run _listen_ with superuser (sudo) privileges. Except for experimental video opt
   
   **stop**		stop what _listen_ is currently doing
   
-Note: _listen_ can record and send or record and receive at the same time, just run the command twice sequentially changing the option each time. Option **stop** will stop all actions at once.
+Note: _listen_ can be run multiple times to start daemons for multiple functions. _listen_ can record and send, or record and receive at the same time, just run the command more than once sequentially changing the option each time. Run it again with **video** to start the video daemon as well. Option **stop** will stop all functions at once.
   
 ### Second option (optional)
   **live**		sox will run in foreground, not background, so you can see what it's doing as it records and/or streams
